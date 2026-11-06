@@ -387,9 +387,8 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Super-fine pure white Sanskar Bharati outline powder.',
     descriptionMr: 'संस्कार भारती आउटलाइनसाठी खास शुभ्र पांढरी रांगोळी पावडर.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '500gm': { retailPrice: 8, wholesalePrice: 4, label: '500gm' },
+      '1000gm': { retailPrice: 15, wholesalePrice: 8, label: '1000gm' }
     }
   }
 ];

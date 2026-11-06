@@ -14,11 +14,14 @@ const RangoliColorCard = ({ color }) => {
   const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
 
-  const [selectedWeight, setSelectedWeight] = useState('500gm');
+  const availableWeights = Object.keys(color.weights);
+  const [selectedWeight, setSelectedWeight] = useState(
+    color.weights['500gm'] ? '500gm' : availableWeights[0]
+  );
   const [packetCount, setPacketCount] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
 
-  const weightInfo = color.weights[selectedWeight] || color.weights['500gm'];
+  const weightInfo = color.weights[selectedWeight] || color.weights['500gm'] || color.weights[availableWeights[0]];
   const unitPrice = isWholesaler ? weightInfo.wholesalePrice : weightInfo.retailPrice;
   const totalPrice = unitPrice * packetCount;
 
@@ -67,7 +70,7 @@ const RangoliColorCard = ({ color }) => {
     }, 2000);
   };
 
-  const weightKeys = ['250gm', '500gm', '1000gm'];
+  const weightKeys = availableWeights;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 backdrop-blur-md">
@@ -132,7 +135,7 @@ const RangoliColorCard = ({ color }) => {
           <label className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider block">
             {isMarathi ? 'वजन निवडा (Weight):' : 'Select Weight:'}
           </label>
-          <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
+          <div className={`grid ${weightKeys.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5 sm:gap-2`}>
             {weightKeys.map((wKey) => {
               const isSelected = selectedWeight === wKey;
               const priceForWeight = isWholesaler

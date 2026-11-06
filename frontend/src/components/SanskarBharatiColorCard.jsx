@@ -14,12 +14,15 @@ const SanskarBharatiColorCard = ({ color }) => {
   const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
 
-  const [selectedWeight, setSelectedWeight] = useState('500gm');
+  const availableWeights = Object.keys(color.weights);
+  const [selectedWeight, setSelectedWeight] = useState(
+    color.weights['500gm'] ? '500gm' : availableWeights[0]
+  );
   const [packetCount, setPacketCount] = useState(1);
   const [justAdded, setJustAdded] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
 
-  const weightInfo = color.weights[selectedWeight] || color.weights['500gm'];
+  const weightInfo = color.weights[selectedWeight] || color.weights['500gm'] || color.weights[availableWeights[0]];
   const unitPrice = isWholesaler ? weightInfo.wholesalePrice : weightInfo.retailPrice;
   const totalPrice = unitPrice * packetCount;
 
@@ -68,7 +71,7 @@ const SanskarBharatiColorCard = ({ color }) => {
     }, 2000);
   };
 
-  const weightKeys = ['250gm', '500gm', '1000gm'];
+  const weightKeys = availableWeights;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-3xl border border-rose-200/60 dark:border-rose-950/40 bg-white dark:bg-slate-900 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 backdrop-blur-md">
@@ -173,7 +176,7 @@ const SanskarBharatiColorCard = ({ color }) => {
           <label className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
             {isMarathi ? 'वजन निवडा (Weight):' : 'Select Weight:'}
           </label>
-          <div className="grid grid-cols-3 gap-1.5">
+          <div className={`grid ${weightKeys.length === 2 ? 'grid-cols-2' : 'grid-cols-3'} gap-1.5`}>
             {weightKeys.map((wKey) => {
               const isSelected = selectedWeight === wKey;
               const priceForWeight = isWholesaler
