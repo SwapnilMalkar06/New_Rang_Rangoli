@@ -3,14 +3,15 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { addToCart } from '../store/cartSlice';
-import { selectIsWholesaler } from '../store/authSlice';
-import { ArrowLeft, Plus, Minus, Info, AlertCircle, ShoppingCart } from 'lucide-react';
+import { selectIsWholesaler, selectUser } from '../store/authSlice';
+import { ArrowLeft, Plus, Minus, Info, AlertCircle, ShoppingCart, Lock } from 'lucide-react';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { t, language } = useLanguage();
+  const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
 
   const [product, setProduct] = useState(null);
@@ -56,12 +57,11 @@ const ProductDetailPage = () => {
 
   const handleAddToCartClick = () => {
     if (!product) return;
+    if (!user) {
+      navigate(`/login?redirect=/product/${id}`);
+      return;
+    }
     dispatch(addToCart({ product, quantity }));
-    alert(
-      language === 'mr'
-        ? `कार्टमध्ये यशस्वीरित्या जोडले गेले: ${language === 'mr' && product.nameMR ? product.nameMR : product.name}`
-        : `Added to cart successfully: ${product.name}`
-    );
   };
 
   if (loading) {
@@ -225,10 +225,23 @@ const ProductDetailPage = () => {
 
                   <button
                     onClick={handleAddToCartClick}
-                    className="w-full sm:w-auto flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold py-3.5 px-6 text-xs hover:shadow-lg shadow-orange-500/10 hover:scale-102 transition-all duration-300"
+                    className={`w-full sm:w-auto flex-1 flex items-center justify-center gap-2 rounded-xl text-white font-bold py-3.5 px-6 text-xs transition-all duration-300 cursor-pointer ${
+                      !user
+                        ? 'bg-slate-900 hover:bg-orange-600 dark:bg-slate-800 dark:hover:bg-orange-600 shadow-slate-900/20'
+                        : 'bg-gradient-to-r from-orange-500 to-rose-600 hover:shadow-lg shadow-orange-500/10 hover:scale-102'
+                    }`}
                   >
-                    <ShoppingCart className="h-4 w-4" />
-                    <span>{t('addToCartBtn')}</span>
+                    {!user ? (
+                      <>
+                        <Lock className="h-4 w-4 text-amber-400" />
+                        <span>{language === 'mr' ? 'खरेदीसाठी लॉगिन करा 🔒' : 'Sign In to Add to Cart 🔒'}</span>
+                      </>
+                    ) : (
+                      <>
+                        <ShoppingCart className="h-4 w-4" />
+                        <span>{t('addToCartBtn')}</span>
+                      </>
+                    )}
                   </button>
                 </div>
               )}

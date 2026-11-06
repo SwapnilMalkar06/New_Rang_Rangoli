@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { useSearchParams, Link } from 'react-router-dom';
+import { useSearchParams, Link, useNavigate } from 'react-router-dom';
 import {
   fetchProducts,
   setFilter,
@@ -15,7 +15,7 @@ import ProductCard from './ProductCard';
 import RangoliColorCatalog from './RangoliColorCatalog';
 import SanskarBharatiColorCatalog from './SanskarBharatiColorCatalog';
 import { useLanguage } from '../context/LanguageContext';
-import { selectIsWholesaler } from '../store/authSlice';
+import { selectIsWholesaler, selectUser } from '../store/authSlice';
 import { addToCart } from '../store/cartSlice';
 
 // Available theme definitions for cultural calendar simulation
@@ -79,7 +79,9 @@ const TABS = [
 
 const ProductGrid = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { t, language } = useLanguage();
+  const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
   
   // Select slice states
@@ -193,13 +195,12 @@ const ProductGrid = () => {
   };
 
   const handleAddToCart = (product) => {
+    if (!user) {
+      navigate('/login?redirect=/shop');
+      return;
+    }
     const qty = isWholesaler ? product.minWholesaleQuantity : 1;
     dispatch(addToCart({ product, quantity: qty }));
-    alert(
-      language === 'mr'
-        ? `कार्टमध्ये यशस्वीरित्या जोडले गेले: ${language === 'mr' && product.nameMR ? product.nameMR : product.name}`
-        : `Added to cart successfully: ${product.name}`
-    );
   };
 
   const getTranslatedBanner = () => {

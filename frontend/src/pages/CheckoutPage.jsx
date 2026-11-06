@@ -40,12 +40,14 @@ const CheckoutPage = () => {
   const [checkoutError, setCheckoutError] = useState('');
 
   useEffect(() => {
-    if (user) {
-      setName(user.name || '');
-      setEmail(user.email || '');
-      setPhone(user.phone || '');
+    if (!user) {
+      navigate('/login?redirect=/checkout');
+      return;
     }
-  }, [user]);
+    setName(user.name || '');
+    setEmail(user.email || '');
+    setPhone(user.phone || '');
+  }, [user, navigate]);
 
   useEffect(() => {
     if (cartItems.length === 0) {

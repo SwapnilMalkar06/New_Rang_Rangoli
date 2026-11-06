@@ -1,10 +1,10 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { fetchProducts, selectAllProducts, selectProductsLoading } from '../store/productSlice';
 import { addToCart } from '../store/cartSlice';
-import { selectIsWholesaler } from '../store/authSlice';
+import { selectIsWholesaler, selectUser } from '../store/authSlice';
 import ProductCard from '../components/ProductCard';
 import FestivalCards from '../components/FestivalCards';
 import CurrentFestivalHero from '../components/CurrentFestivalHero';
@@ -13,6 +13,8 @@ import { Truck, CheckCircle, ShieldCheck } from 'lucide-react';
 const LandingPage = () => {
   const { t, language } = useLanguage();
   const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
   const products = useSelector(selectAllProducts);
   const loading = useSelector(selectProductsLoading);
@@ -22,6 +24,10 @@ const LandingPage = () => {
   }, [dispatch]);
 
   const handleAddToCart = (product) => {
+    if (!user) {
+      navigate('/login?redirect=/');
+      return;
+    }
     const qty = isWholesaler ? product.minWholesaleQuantity : 1;
     dispatch(addToCart({ product, quantity: qty }));
     alert(

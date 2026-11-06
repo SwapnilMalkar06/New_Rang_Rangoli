@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { selectCartItems, updateQuantity, removeFromCart, selectCartTotal } from '../store/cartSlice';
 import { selectIsWholesaler, selectUser } from '../store/authSlice';
-import { Plus, Minus, Trash2, ArrowRight, Store, AlertTriangle, Sparkles, User } from 'lucide-react';
+import { Plus, Minus, Trash2, ArrowRight, Store, AlertTriangle, Sparkles, User, Lock } from 'lucide-react';
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -39,6 +39,10 @@ const CartPage = () => {
 
   const handleProceedToCheckout = () => {
     if (cartItems.length === 0) return;
+    if (!user) {
+      navigate('/login?redirect=/checkout');
+      return;
+    }
     if (hasWholesaleErrors) {
       alert('Please adjust quantities to meet the Wholesaler Minimum Order Quantity (MOQ) for all items.');
       return;
@@ -68,15 +72,16 @@ const CartPage = () => {
 
         {/* Customer Login Prompt / Active Status Banner */}
         {!user ? (
-          <div className="mb-6 rounded-2xl bg-gradient-to-r from-orange-500/10 via-rose-500/10 to-amber-500/10 border border-orange-500/20 p-4 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+          <div className="mb-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-amber-500/30 p-4 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-              <Sparkles className="h-4 w-4 text-orange-500 shrink-0" />
-              <span>{t('guestCheckoutNotice')}</span>
+              <Lock className="h-4 w-4 text-amber-500 shrink-0" />
+              <span>{t('loginRequiredPrompt')}</span>
             </div>
             <Link
               to="/login?redirect=/cart"
-              className="inline-flex items-center gap-1 rounded-xl bg-orange-500 text-white px-3.5 py-1.5 text-xs font-bold shadow-xs hover:bg-orange-600 shrink-0 transition-all"
+              className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 text-xs font-bold shadow-xs hover:from-orange-600 hover:to-amber-700 shrink-0 transition-all"
             >
+              <Lock className="h-3.5 w-3.5" />
               <span>{t('navLogin')}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -221,10 +226,23 @@ const CartPage = () => {
             <button
               onClick={handleProceedToCheckout}
               disabled={hasWholesaleErrors}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 text-white font-bold py-3.5 px-4 text-xs hover:shadow-lg shadow-orange-500/10 hover:scale-102 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              className={`w-full flex items-center justify-center gap-2 rounded-xl text-white font-bold py-3.5 px-4 text-xs hover:shadow-lg transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+                !user 
+                  ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600 hover:brightness-110 shadow-amber-500/20' 
+                  : 'bg-gradient-to-r from-orange-500 to-rose-600 shadow-orange-500/10 hover:scale-102'
+              }`}
             >
-              <span>{t('checkoutHeader')}</span>
-              <ArrowRight className="h-4 w-4" />
+              {!user ? (
+                <>
+                  <Lock className="h-4 w-4 text-amber-200" />
+                  <span>{t('loginToCheckout')}</span>
+                </>
+              ) : (
+                <>
+                  <span>{t('checkoutHeader')}</span>
+                  <ArrowRight className="h-4 w-4" />
+                </>
+              )}
             </button>
           </div>
         </div>

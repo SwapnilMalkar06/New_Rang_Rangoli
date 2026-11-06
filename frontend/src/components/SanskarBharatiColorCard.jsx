@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
-import { selectIsWholesaler } from '../store/authSlice';
+import { selectIsWholesaler, selectUser } from '../store/authSlice';
 import { addToCart } from '../store/cartSlice';
-import { Plus, Minus, ShoppingBag, Check, Sparkles, ZoomIn, Eye } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, Check, Sparkles, ZoomIn, Eye, Lock } from 'lucide-react';
 
 const SanskarBharatiColorCard = ({ color }) => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const isMarathi = language === 'mr';
+  const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
 
   const [selectedWeight, setSelectedWeight] = useState('500gm');
@@ -29,6 +32,11 @@ const SanskarBharatiColorCard = ({ color }) => {
   };
 
   const handleAddToCart = () => {
+    if (!user) {
+      navigate('/login?redirect=/shop?category=Sanskar%20Bharati%20Rangoli');
+      return;
+    }
+
     dispatch(
       addToCart({
         product: {
@@ -252,6 +260,8 @@ const SanskarBharatiColorCard = ({ color }) => {
             className={`w-full flex items-center justify-center gap-2 rounded-xl py-2.5 px-4 text-xs font-bold transition-all duration-300 shadow-md cursor-pointer ${
               justAdded
                 ? 'bg-emerald-600 text-white shadow-emerald-500/20 scale-[1.01]'
+                : !user
+                ? 'bg-slate-900 text-white hover:bg-rose-600 dark:bg-slate-800 dark:hover:bg-rose-600 shadow-slate-900/20'
                 : 'bg-gradient-to-r from-rose-600 via-pink-600 to-amber-500 hover:opacity-95 text-white shadow-rose-500/20 hover:scale-[1.02]'
             }`}
           >
@@ -259,6 +269,11 @@ const SanskarBharatiColorCard = ({ color }) => {
               <>
                 <Check className="h-4 w-4" />
                 <span>{isMarathi ? 'कार्टमध्ये जोडले! ✓' : 'Added to Cart! ✓'}</span>
+              </>
+            ) : !user ? (
+              <>
+                <Lock className="h-3.5 w-3.5 text-amber-400" />
+                <span>{isMarathi ? 'खरेदीसाठी लॉगिन करा 🔒' : 'Sign In to Add to Cart 🔒'}</span>
               </>
             ) : (
               <>

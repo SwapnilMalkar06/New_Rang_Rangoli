@@ -148,7 +148,10 @@ export const translations = {
     orderTotal: 'Total Amount',
     viewDetails: 'View Details',
     quickDemoLogin: 'Quick Demo Customer Login',
-    guestCheckoutNotice: 'Shopping as a guest? Log in for quick saved checkout and order tracking.'
+    guestCheckoutNotice: 'Shopping as a guest? Log in for quick saved checkout and order tracking.',
+    signInToAddCart: 'Sign In to Add to Cart',
+    loginRequiredPrompt: 'Please sign in or create an account to add items to your cart.',
+    loginToCheckout: 'Sign In to Checkout'
   },
   mr: {
     // Navbar
@@ -299,6 +302,9 @@ export const translations = {
     orderTotal: 'एकूण रक्कम',
     viewDetails: 'तपशील पहा',
     quickDemoLogin: 'डेमो ग्राहक लॉगिन',
-    guestCheckoutNotice: 'अतिथी म्हणून खरेदी करत आहात? जलद चेकआउट आणि ऑर्डर ट्रॅकिंगसाठी लॉगिन करा.'
+    guestCheckoutNotice: 'अतिथी म्हणून खरेदी करत आहात? जलद चेकआउट आणि ऑर्डर ट्रॅकिंगसाठी लॉगिन करा.',
+    signInToAddCart: 'खरेदीसाठी लॉगिन करा',
+    loginRequiredPrompt: 'कार्टमध्ये रंग जोडण्यासाठी आणि खरेदी करण्यासाठी कृपया लॉगिन करा.',
+    loginToCheckout: 'चेकआउटसाठी लॉगिन करा'
   }
 };

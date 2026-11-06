@@ -1,6 +1,8 @@
 import { useLanguage } from '../context/LanguageContext';
 import { useSelector } from 'react-redux';
-import { selectIsWholesaler } from '../store/authSlice';
+import { useNavigate } from 'react-router-dom';
+import { selectIsWholesaler, selectUser } from '../store/authSlice';
+import { Lock } from 'lucide-react';
 
 /**
  * Helper to match category themes
@@ -40,7 +42,9 @@ const getCardGlowClass = (category) => {
 };
 
 const ProductCard = ({ product, themeAccent = 'orange', onAddToCart }) => {
+  const navigate = useNavigate();
   const { language } = useLanguage();
+  const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
   
   const {
@@ -186,25 +190,42 @@ const ProductCard = ({ product, themeAccent = 'orange', onAddToCart }) => {
           </div>
 
           <button
-            onClick={() => onAddToCart && onAddToCart(product)}
+            onClick={() => {
+              if (!user) {
+                navigate('/login?redirect=/shop');
+                return;
+              }
+              onAddToCart && onAddToCart(product);
+            }}
             disabled={stockQuantity === 0}
-            className={`flex items-center justify-center rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-md transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-500 disabled:shadow-none ${buttonAccent}`}
+            className={`flex items-center justify-center rounded-xl px-3.5 py-2 text-xs font-bold text-white shadow-md transition-all duration-300 focus:outline-hidden focus:ring-2 focus:ring-offset-2 disabled:cursor-not-allowed disabled:from-slate-400 disabled:to-slate-500 disabled:shadow-none cursor-pointer ${
+              !user ? 'bg-slate-900 hover:bg-orange-600 dark:bg-slate-800 dark:hover:bg-orange-600' : buttonAccent
+            }`}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="mr-1.5 h-3.5 w-3.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-              />
-            </svg>
-            Add to Cart
+            {!user ? (
+              <>
+                <Lock className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
+                <span>{language === 'mr' ? 'लॉगिन करा' : 'Sign in to Cart'}</span>
+              </>
+            ) : (
+              <>
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="mr-1.5 h-3.5 w-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
+                  />
+                </svg>
+                <span>Add to Cart</span>
+              </>
+            )}
           </button>
         </div>
       </div>

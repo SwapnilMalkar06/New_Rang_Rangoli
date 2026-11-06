@@ -58,6 +58,12 @@ const cartSlice = createSlice({
   initialState,
   reducers: {
     addToCart(state, action) {
+      // Mandatory authentication: guests cannot add products to cart
+      if (!state.storageKey || state.storageKey === 'cart_guest') {
+        console.warn('Mandatory login required: Guests cannot add products to cart.');
+        return;
+      }
+
       const {
         product,
         quantity = 1,
