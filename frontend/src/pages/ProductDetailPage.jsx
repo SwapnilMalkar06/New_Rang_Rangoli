@@ -122,7 +122,7 @@ const ProductDetailPage = () => {
                 {displayName}
               </h1>
               <span className="text-xs font-bold text-slate-400 block mb-4 uppercase tracking-wider">
-                Category Pillar: {product.subCategory}
+                Category: {product.subCategory}
               </span>
               <div className="flex items-center gap-1 text-xs text-amber-500 font-bold">
                 ★★★★★ <span className="text-slate-400 dark:text-slate-500 ml-1">4.8 / 5 Customer Rating</span>

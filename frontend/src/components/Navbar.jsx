@@ -96,7 +96,7 @@ const Navbar = () => {
                 {/* View All catalog banner */}
                 <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-900">
                   <Link
-                    to="/shop"
+                    to="/shop?category=Rangoli"
                     className="flex items-center justify-center gap-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 dark:bg-slate-900/60 dark:hover:bg-slate-900 py-2 text-xs font-bold text-orange-500 transition-colors"
                   >
                     <span>Browse All Products</span>

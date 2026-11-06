@@ -54,7 +54,7 @@ const initialState = {
   loading: false,
   error: null,
   filters: {
-    mainCategory: '',
+    mainCategory: 'Rangoli',
     subCategory: '',
     tag: '',
     minPrice: '',

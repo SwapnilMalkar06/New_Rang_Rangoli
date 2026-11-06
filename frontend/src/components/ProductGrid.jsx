@@ -67,7 +67,6 @@ const THEMES = {
 };
 
 const TABS = [
-  { key: '', labelKey: 'allPillars', emoji: '🌈' },
   { key: 'Rangoli', labelKey: 'catRangoli', emoji: '🌸' },
   { key: 'Sanskar Bharati Rangoli', labelKey: 'catSanskarBharati', emoji: '🌀' },
   { key: 'Portrait Color', labelKey: 'catPortraitColor', emoji: '🎨' },
@@ -93,7 +92,7 @@ const ProductGrid = () => {
 
   // Search parameters for syncing Navbar category clicks
   const [searchParams, setSearchParams] = useSearchParams();
-  const categoryParam = searchParams.get('category') || '';
+  const categoryParam = searchParams.get('category') || 'Rangoli';
   const tagParam = searchParams.get('tag') || '';
   const searchParam = searchParams.get('search') || '';
   const themeParam = searchParams.get('theme') || '';
@@ -167,14 +166,13 @@ const ProductGrid = () => {
   };
 
   const handleCategorySelect = (categoryName) => {
-    if (categoryName) {
-      setSearchParams({ category: categoryName });
-    } else {
-      setSearchParams({});
-    }
+    const selected = categoryName || 'Rangoli';
+    setSearchParams({ category: selected });
     dispatch(setFilter({ 
-      mainCategory: categoryName,
-      subCategory: '' // reset subCategory on main change
+      mainCategory: selected,
+      subCategory: '', // reset subCategory on main change
+      tag: '',
+      page: 1
     }));
   };
 
@@ -189,9 +187,10 @@ const ProductGrid = () => {
   };
 
   const handleReset = () => {
-    setSearchParams({});
+    setSearchParams({ category: 'Rangoli' });
     setSearchInput('');
     dispatch(resetFilters());
+    dispatch(setFilter({ mainCategory: 'Rangoli' }));
   };
 
   const handleAddToCart = (product) => {
