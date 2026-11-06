@@ -239,31 +239,6 @@ const ProductGrid = () => {
     <div className={`min-h-screen px-4 py-8 md:px-8 transition-colors duration-500 ${theme.bgClass}`}>
       <div className="mx-auto max-w-7xl">
         
-        {/* Dynamic Theme Engine Controls */}
-        <div className="mb-6 flex flex-wrap items-center justify-between gap-4 rounded-xl bg-white/40 dark:bg-slate-900/30 p-3.5 border border-white/20 dark:border-slate-800/40 backdrop-blur-xs">
-          <div className="flex items-center gap-2">
-            <span className="inline-flex h-2.5 w-2.5 rounded-full bg-emerald-500 animate-ping"></span>
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              {language === 'mr' ? 'डायनॅमिक थीम नियंत्रण (सांस्कृतिक कॅलेंडर इंजिन)' : 'Dynamic Theme Control (Cultural Calendar Engine)'}
-            </span>
-          </div>
-          <div className="flex gap-2">
-            {Object.values(THEMES).map((t) => (
-              <button
-                key={t.id}
-                onClick={() => setActiveTheme(t.id)}
-                className={`rounded-lg px-3 py-1.5 text-xs font-semibold tracking-wide shadow-xs transition-all duration-300 ${
-                  activeTheme === t.id
-                    ? 'bg-slate-800 text-white dark:bg-white dark:text-slate-900'
-                    : 'bg-white/60 text-slate-700 hover:bg-white/80 dark:bg-slate-800/60 dark:text-slate-300 dark:hover:bg-slate-800/80'
-                }`}
-              >
-                {t.name}
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Dynamic Theme Banner */}
         <div className={`relative overflow-hidden rounded-3xl border bg-gradient-to-br p-8 md:p-12 mb-8 shadow-xl transition-all duration-500 ${theme.bannerClass}`}>
           <div className="relative z-10 max-w-2xl">
