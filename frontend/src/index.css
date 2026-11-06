@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply font-sans bg-slate-50 text-slate-900 selection:bg-rose-500 selection:text-white dark:bg-slate-950 dark:text-slate-100 transition-colors duration-300;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-outfit;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: linear-gradient(to bottom, #ea580c, #e11d48);
+    border-radius: 10px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(to bottom, #f97316, #f43f5e);
+  }
+}
+
+@layer utilities {
+  /* Dynamic Mesh background style */
+  .bg-mesh-glow {
+    position: relative;
+  }
+  .bg-mesh-glow::before {
+    content: '';
+    position: absolute;
+    top: -10%;
+    left: -10%;
+    width: 50%;
+    height: 50%;
+    background: radial-gradient(circle, rgba(244, 63, 94, 0.08) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+    filter: blur(100px);
+  }
+  .bg-mesh-glow::after {
+    content: '';
+    position: absolute;
+    bottom: -10%;
+    right: -10%;
+    width: 50%;
+    height: 50%;
+    background: radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 70%);
+    z-index: 0;
+    pointer-events: none;
+    filter: blur(100px);
+  }
+}
