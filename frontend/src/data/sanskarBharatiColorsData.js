@@ -275,19 +275,18 @@ export const SANSKAR_BHARATI_COLORS = [
   {
     id: 'sb-white-powder',
     number: 'W',
-    nameEn: 'Super-Fine Sanskar Bharati White Powder',
-    nameMr: 'सुपर-फाईन संस्कार भारती पांढरी पावडर',
-    shadeName: 'Pure White Foundation',
+    nameEn: 'Sanskar Bharati White Rangoli (Sand-Grain Texture)',
+    nameMr: 'संस्कार भारती पांढरी रांगोळी (रवाळ पोत)',
+    shadeName: 'Pure White (Sand-like Grain)',
     category: 'Foundation Essential',
     hex: '#FFFFFF',
     image: '/colors/sanskar-bharati/sb-white-powder.jpg',
-    descriptionEn: 'The indispensable foundation of Sanskar Bharati art. Ultra-soft, smooth powder formulated specifically for 5-finger freehand outline drawing.',
-    descriptionMr: 'संस्कार भारती कलेचा मूळ पाया. ५-बोटांनी सलग आणि अचूक आउटलाइन काढण्यासाठी खास मऊ आणि रेशमी पांढरी पावडर.',
-    textureDetails: 'Ultra-smooth soft powder structure with optimal fingertip grip for thumb & 4 fingers.',
+    descriptionEn: 'Authentic sand-like grain structure (not powdery). Formulated with ideal grain friction for crisp, sharp 5-finger freehand outline drawing without slipping.',
+    descriptionMr: 'बारीक वाळूसारखी रवाळ पोत (पावडर नसलेली). ५-बोटांनी अचूक, सलग आणि न घसरणाऱ्या आउटलाइन काढण्यासाठी खास रवाळ पांढरी रांगोळी.',
+    textureDetails: 'Fine Sand-like Grain Structure (Not Powdery), optimal fingertip grip for thumb & 4 fingers.',
     weights: {
-      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
-      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
-      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
+      '500gm': { retailPrice: 15, wholesalePrice: 8, label: '500gm' },
+      '1000gm': { retailPrice: 30, wholesalePrice: 15, label: '1000gm' }
     }
   }
 ];

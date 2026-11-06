@@ -119,7 +119,13 @@ const SanskarBharatiColorCard = ({ color }) => {
           {/* Soft Powder Zoom Pill Overlay on Hover */}
           <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex items-center gap-1 rounded-full bg-slate-950/85 border border-white/20 backdrop-blur-md px-2.5 py-0.5 text-[10px] font-bold text-white opacity-0 group-hover:opacity-100 transition-opacity duration-200">
             <Eye className="h-3 w-3 text-amber-400" />
-            <span>{isZoomed ? 'Reset View' : (isMarathi ? 'मऊ पावडर रचना' : 'Soft Powder View')}</span>
+            <span>
+              {isZoomed 
+                ? 'Reset View' 
+                : color.number === 'W'
+                ? (isMarathi ? 'रवाळ वाळू पोत' : 'Sand Grain View')
+                : (isMarathi ? 'मऊ पावडर रचना' : 'Soft Powder View')}
+            </span>
           </div>
         </div>
 
@@ -134,10 +140,18 @@ const SanskarBharatiColorCard = ({ color }) => {
           </span>
         </div>
 
-        {/* Soft Powder Structure Seal */}
-        <div className="absolute top-3 right-3 flex items-center gap-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-600 px-2.5 py-0.5 text-[9px] font-extrabold text-white shadow-md uppercase tracking-wider">
+        {/* Structure Seal */}
+        <div className={`absolute top-3 right-3 flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[9px] font-extrabold text-white shadow-md uppercase tracking-wider ${
+          color.number === 'W'
+            ? 'bg-gradient-to-r from-amber-600 via-orange-600 to-rose-600'
+            : 'bg-gradient-to-r from-rose-500 to-pink-600'
+        }`}>
           <Sparkles className="h-3 w-3" />
-          <span>{isMarathi ? 'अतिशय मऊ पावडर' : 'Ultra-Soft Powder'}</span>
+          <span>
+            {color.number === 'W'
+              ? (isMarathi ? 'रवाळ वाळू पोत' : 'Sand-Like Grain')
+              : (isMarathi ? 'अतिशय मऊ पावडर' : 'Ultra-Soft Powder')}
+          </span>
         </div>
       </div>
 
@@ -161,12 +175,20 @@ const SanskarBharatiColorCard = ({ color }) => {
           </p>
         </div>
 
-        {/* Soft Powder Structure Highlight Pill */}
-        <div className="mb-3 px-2.5 py-1.5 rounded-xl bg-rose-50/80 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
-          <div className="text-[10px] font-bold text-rose-700 dark:text-rose-300 flex items-center gap-1.5">
-            <span className="h-1.5 w-1.5 rounded-full bg-rose-500 animate-pulse shrink-0" />
+        {/* Structure Highlight Pill */}
+        <div className={`mb-3 px-2.5 py-1.5 rounded-xl border ${
+          color.number === 'W'
+            ? 'bg-amber-500/10 dark:bg-amber-950/30 border-amber-500/30 text-amber-800 dark:text-amber-300'
+            : 'bg-rose-50/80 dark:bg-rose-950/20 border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-300'
+        }`}>
+          <div className="text-[10px] font-bold flex items-center gap-1.5">
+            <span className={`h-1.5 w-1.5 rounded-full animate-pulse shrink-0 ${
+              color.number === 'W' ? 'bg-amber-500' : 'bg-rose-500'
+            }`} />
             <span className="line-clamp-1">
-              {isMarathi ? 'अतिशय मऊ व रेशमी पावडर रचना (५-बोटांच्या नक्षीसाठी)' : 'Ultra-Smooth Soft Powder Structure'}
+              {color.number === 'W'
+                ? (isMarathi ? 'रवाळ वाळूसारखी पोत - पावडर नसलेली (Sand-like Grain Structure)' : 'Fine Sand-like Grain Structure (Not Powdery)')
+                : (isMarathi ? 'अतिशय मऊ व रेशमी पावडर रचना (५-बोटांच्या नक्षीसाठी)' : 'Ultra-Smooth Soft Powder Structure')}
             </span>
           </div>
         </div>
