@@ -15,9 +15,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'मध्यवर्ती मंडलासाठी खास अतिशय मऊ, रेशमी मखमली आणि तेजस्वी सोनेरी पिवळी संस्कार भारती पावडर.',
     textureDetails: 'Ultra-soft velvety powder structure, talc-smooth touch, zero grain, seamless finger glide.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -33,9 +33,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'पार्श्वभूमी शेडिंगसाठी उत्कृष्ट अतिशय मऊ आणि रेशमी आकाशी फिरोजी निळा रंग.',
     textureDetails: 'Silk-smooth powder consistency, effortless finger release, smooth daylight radiance.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -51,9 +51,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'हळुवार ग्रेडियंट शेडिंगसाठी नाजूक फिकट लेमन पेस्टल अतिशय मऊ पावडर.',
     textureDetails: 'Extra-soft featherlight powder structure, smooth non-streaking blending.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -69,9 +69,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'फुलांच्या पाकळ्या व उत्सवाच्या डिझाईन्ससाठी मखमली, मऊ राणी गुलाबी रंग.',
     textureDetails: 'High-density pigment in soft smooth powder base, smooth tactile adherence.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -87,9 +87,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'नाजूक पाने व वेलबुट्टीसाठी मऊ व मखमली पोपटी ऑलिव्ह हिरवा रंग.',
     textureDetails: 'Fine flour-soft texture, non-clumping, perfect for continuous line flowing.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -105,9 +105,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'पांढऱ्या बॉर्डर्सच्या बाजूला उठावदार दिसणारा मऊ, गडद पाचू हिरवा रंग.',
     textureDetails: 'Dense micro-powder structure, smooth opaque coverage with no graininess.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -123,9 +123,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'पारंपारिक संस्कार भारती चौकाचा आत्मा असलेला मऊ व मखमली पवित्र सिंदूर लाल रंग.',
     textureDetails: 'Silky smooth powder feel, flawless freehand release from thumb and fingers.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -141,9 +141,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'मोरपिसाच्या डिझाईन्ससाठी खास तयार केलेला मऊ, तेजस्वी रॉयल इंडिगो निळा रंग.',
     textureDetails: 'Silky micro-fine powder structure, vivid daylight luminescence.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -159,9 +159,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'नाट्यमय सावली आणि बाह्य कडांसाठी मऊ व गडद नेव्ही निळा रांगोळी रंग.',
     textureDetails: 'Ultra-soft dense powder, opaque single-swipe coverage.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -177,9 +177,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'संध्याकाळच्या प्रकाशातही उठून दिसणारा मऊ, चमकदार निऑन पिवळा रंग.',
     textureDetails: 'Velvety smooth fluorescent powder, ultra-soft tactile feel.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -195,9 +195,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'शाही पाकळ्या व उत्सवाच्या रांगोळीसाठी समृद्ध, मऊ वाईन जांभळा रंग.',
     textureDetails: 'Silk-smooth powder consistency, optimal for 5-finger spreads (पंचबोटे).',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -213,9 +213,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'झेंडूच्या फुलांसारखा नैसर्गिक, मऊ आणि मखमली केसरी नारंगी रंग.',
     textureDetails: 'High-flow soft powder structure, seamless blending with golden yellow.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -231,9 +231,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'पारंपारिक आतील वर्तुळांसाठी समृद्ध, मऊ आणि मखमली गडद मरून रंग.',
     textureDetails: 'Super-soft powdery touch, non-abrasive, smooth finger control.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -249,9 +249,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'दिवसाच्या उजेडातही चमकणारा अत्यंत मऊ आणि रेशमी कोबाल्ट निळा रांगोळी रंग.',
     textureDetails: 'Silky smooth powder particles for smooth finger and roller spread.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -267,9 +267,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'महाराष्ट्रातील सणांमध्ये अत्यंत प्रिय असलेला पारंपारिक मऊ शाही जांभळा रंग.',
     textureDetails: 'Ultra-soft micro-powder structure, zero streaking, even velvet finish.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   },
   {
@@ -285,9 +285,9 @@ export const SANSKAR_BHARATI_COLORS = [
     descriptionMr: 'संस्कार भारती कलेचा मूळ पाया. ५-बोटांनी सलग आणि अचूक आउटलाइन काढण्यासाठी खास मऊ आणि रेशमी पांढरी पावडर.',
     textureDetails: 'Ultra-smooth soft powder structure with optimal fingertip grip for thumb & 4 fingers.',
     weights: {
-      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
-      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
-      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
+      '250gm': { retailPrice: 40, wholesalePrice: 20, label: '250gm' },
+      '500gm': { retailPrice: 80, wholesalePrice: 40, label: '500gm' },
+      '1000gm': { retailPrice: 160, wholesalePrice: 80, label: '1000gm' }
     }
   }
 ];
