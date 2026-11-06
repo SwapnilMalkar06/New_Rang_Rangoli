@@ -29,3 +29,5 @@ Thumbs.db
 
 # Agent & Temp directories
 .gemini/
+
+.vercel
