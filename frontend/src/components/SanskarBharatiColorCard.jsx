@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { selectIsWholesaler, selectUser } from '../store/authSlice';
 import { addToCart } from '../store/cartSlice';
-import { Plus, Minus, ShoppingBag, Check, Sparkles, ZoomIn, Eye, Lock } from 'lucide-react';
+import { Plus, Minus, ShoppingBag, Check, Sparkles, ZoomIn, Eye } from 'lucide-react';
 
 const SanskarBharatiColorCard = ({ color }) => {
   const dispatch = useDispatch();
@@ -271,10 +271,7 @@ const SanskarBharatiColorCard = ({ color }) => {
                 <span>{isMarathi ? 'कार्टमध्ये जोडले! ✓' : 'Added to Cart! ✓'}</span>
               </>
             ) : !user ? (
-              <>
-                <Lock className="h-3.5 w-3.5 text-amber-400" />
-                <span>{isMarathi ? 'खरेदीसाठी लॉगिन करा 🔒' : 'Sign In to Add to Cart 🔒'}</span>
-              </>
+              <span>{isMarathi ? 'खरेदीसाठी लॉगिन करा' : 'Sign In to Add to Cart'}</span>
             ) : (
               <>
                 <ShoppingBag className="h-4 w-4" />

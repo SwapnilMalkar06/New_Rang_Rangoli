@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { selectCartItems, updateQuantity, removeFromCart, selectCartTotal } from '../store/cartSlice';
 import { selectIsWholesaler, selectUser } from '../store/authSlice';
-import { Plus, Minus, Trash2, ArrowRight, Store, AlertTriangle, Sparkles, User, Lock } from 'lucide-react';
+import { Plus, Minus, Trash2, ArrowRight, Store, AlertTriangle, Sparkles, User } from 'lucide-react';
 
 const CartPage = () => {
   const navigate = useNavigate();
@@ -74,14 +74,13 @@ const CartPage = () => {
         {!user ? (
           <div className="mb-6 rounded-2xl bg-gradient-to-r from-amber-500/10 via-orange-500/10 to-rose-500/10 border border-amber-500/30 p-4 text-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
             <div className="flex items-center gap-2.5 text-slate-700 dark:text-slate-300">
-              <Lock className="h-4 w-4 text-amber-500 shrink-0" />
+              <Sparkles className="h-4 w-4 text-amber-500 shrink-0" />
               <span>{t('loginRequiredPrompt')}</span>
             </div>
             <Link
               to="/login?redirect=/cart"
               className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-600 text-white px-4 py-2 text-xs font-bold shadow-xs hover:from-orange-600 hover:to-amber-700 shrink-0 transition-all"
             >
-              <Lock className="h-3.5 w-3.5" />
               <span>{t('navLogin')}</span>
               <ArrowRight className="h-3.5 w-3.5" />
             </Link>
@@ -234,8 +233,8 @@ const CartPage = () => {
             >
               {!user ? (
                 <>
-                  <Lock className="h-4 w-4 text-amber-200" />
                   <span>{t('loginToCheckout')}</span>
+                  <ArrowRight className="h-4 w-4" />
                 </>
               ) : (
                 <>

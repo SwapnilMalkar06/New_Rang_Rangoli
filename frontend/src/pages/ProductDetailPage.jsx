@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { addToCart } from '../store/cartSlice';
 import { selectIsWholesaler, selectUser } from '../store/authSlice';
-import { ArrowLeft, Plus, Minus, Info, AlertCircle, ShoppingCart, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Minus, Info, AlertCircle, ShoppingCart } from 'lucide-react';
 
 const ProductDetailPage = () => {
   const { id } = useParams();
@@ -232,10 +232,7 @@ const ProductDetailPage = () => {
                     }`}
                   >
                     {!user ? (
-                      <>
-                        <Lock className="h-4 w-4 text-amber-400" />
-                        <span>{language === 'mr' ? 'खरेदीसाठी लॉगिन करा 🔒' : 'Sign In to Add to Cart 🔒'}</span>
-                      </>
+                      <span>{language === 'mr' ? 'खरेदीसाठी लॉगिन करा' : 'Sign In to Add to Cart'}</span>
                     ) : (
                       <>
                         <ShoppingCart className="h-4 w-4" />

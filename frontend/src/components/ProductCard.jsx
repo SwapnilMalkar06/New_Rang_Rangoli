@@ -2,7 +2,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { selectIsWholesaler, selectUser } from '../store/authSlice';
-import { Lock } from 'lucide-react';
 
 /**
  * Helper to match category themes
@@ -203,10 +202,7 @@ const ProductCard = ({ product, themeAccent = 'orange', onAddToCart }) => {
             }`}
           >
             {!user ? (
-              <>
-                <Lock className="mr-1.5 h-3.5 w-3.5 text-amber-400" />
-                <span>{language === 'mr' ? 'लॉगिन करा' : 'Sign in to Cart'}</span>
-              </>
+              <span>{language === 'mr' ? 'खरेदीसाठी लॉगिन करा' : 'Sign In to Add to Cart'}</span>
             ) : (
               <>
                 <svg
