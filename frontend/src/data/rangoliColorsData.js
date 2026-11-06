@@ -13,9 +13,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'High-pigment bright crimson red rangoli powder.',
     descriptionMr: 'अतिशय बारीक, तेजस्वी लाल पारंपारिक रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -30,9 +30,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Vibrant sunshine yellow powder for festive highlights.',
     descriptionMr: 'तेजस्वी सूर्यफुलासारखा पिवळा रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -47,9 +47,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Rich emerald forest green rangoli powder.',
     descriptionMr: 'गडद व समृद्ध हिरवा रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -64,9 +64,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Vivid festive pink / gulabi rangoli powder.',
     descriptionMr: 'उत्सवाचा पारंपारिक गुलाबी रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -81,9 +81,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Fresh vibrant parrot green powder.',
     descriptionMr: 'ताजा व मनमोहक पोपटी हिरवा रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -98,9 +98,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Deep royal maroon powder for traditional motifs.',
     descriptionMr: 'शाही गडद मरून रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -115,9 +115,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Soothing clear sky blue rangoli powder.',
     descriptionMr: 'शांत आणि प्रसन्न आकाशी निळा रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -132,9 +132,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Deep royal jambhali violet shade powder.',
     descriptionMr: 'शाही जांभळा व व्हायलेट रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -149,9 +149,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Fiery auspicious marigold orange powder.',
     descriptionMr: 'झेंडूच्या फुलासारखा तेजस्वी नारंगी रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -166,9 +166,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Deep vibrant royal blue rangoli powder.',
     descriptionMr: 'गडद आणि तेजस्वी रॉयल निळा रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -183,9 +183,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Warm earth tone coffee brown rangoli powder.',
     descriptionMr: 'मातीसारखा समृद्ध कॉफी / तपकिरी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -200,9 +200,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Jet black fine outlining & shading powder.',
     descriptionMr: 'आउटलाइनिंग व शेडिंगसाठी गडद काळा रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -217,9 +217,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Dazzling traditional bridal rani pink powder.',
     descriptionMr: 'पारंपारिक आणि चमकदार राणी पिंक रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -234,9 +234,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Exotic deep berry falsa purple powder.',
     descriptionMr: 'आकर्षक फालसा जांभळा रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -251,9 +251,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Regal peacock neck teal-blue rangoli powder.',
     descriptionMr: 'मोरपिसासारखा देखणा मोरपंखी रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -268,9 +268,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Bright cyan rama green rangoli powder.',
     descriptionMr: 'मनमोहक रामा ग्रीन रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -285,9 +285,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Warm royal golden turmeric yellow powder.',
     descriptionMr: 'हळदीसारखा पवित्र सोनेरी पिवळा रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -302,9 +302,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Pastel pistachio green soft shading powder.',
     descriptionMr: 'नाजूक पिस्ता हिरवा रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 35, wholesalePrice: 18, label: '250gm' },
-      '500gm': { retailPrice: 60, wholesalePrice: 32, label: '500gm' },
-      '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -319,9 +319,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'High-intensity neon fluorescent pink powder.',
     descriptionMr: 'अंधारातही चमकणारा फ्लोरोसंट निऑन पिंक रंग.',
     weights: {
-      '250gm': { retailPrice: 45, wholesalePrice: 24, label: '250gm' },
-      '500gm': { retailPrice: 80, wholesalePrice: 42, label: '500gm' },
-      '1000gm': { retailPrice: 150, wholesalePrice: 80, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -336,9 +336,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Glow-in-light neon fluorescent orange powder.',
     descriptionMr: 'चमकदार निऑन नारंगी रांगोळी रंग.',
     weights: {
-      '250gm': { retailPrice: 45, wholesalePrice: 24, label: '250gm' },
-      '500gm': { retailPrice: 80, wholesalePrice: 42, label: '500gm' },
-      '1000gm': { retailPrice: 150, wholesalePrice: 80, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -353,9 +353,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Ultra-bright neon lime fluorescent green powder.',
     descriptionMr: 'अतिशय तेजस्वी निऑन पोपटी हिरवा रंग.',
     weights: {
-      '250gm': { retailPrice: 45, wholesalePrice: 24, label: '250gm' },
-      '500gm': { retailPrice: 80, wholesalePrice: 42, label: '500gm' },
-      '1000gm': { retailPrice: 150, wholesalePrice: 80, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -370,9 +370,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Electric glowing neon yellow powder.',
     descriptionMr: 'विद्युत प्रभा असलेला निऑन पिवळा रंग.',
     weights: {
-      '250gm': { retailPrice: 45, wholesalePrice: 24, label: '250gm' },
-      '500gm': { retailPrice: 80, wholesalePrice: 42, label: '500gm' },
-      '1000gm': { retailPrice: 150, wholesalePrice: 80, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   },
   {
@@ -387,9 +387,9 @@ export const RANGOLI_COLORS = [
     descriptionEn: 'Super-fine pure white Sanskar Bharati outline powder.',
     descriptionMr: 'संस्कार भारती आउटलाइनसाठी खास शुभ्र पांढरी रांगोळी पावडर.',
     weights: {
-      '250gm': { retailPrice: 25, wholesalePrice: 12, label: '250gm' },
-      '500gm': { retailPrice: 45, wholesalePrice: 22, label: '500gm' },
-      '1000gm': { retailPrice: 80, wholesalePrice: 40, label: '1000gm' }
+      '250gm': { retailPrice: 6, wholesalePrice: 3, label: '250gm' },
+      '500gm': { retailPrice: 12, wholesalePrice: 6, label: '500gm' },
+      '1000gm': { retailPrice: 24, wholesalePrice: 12, label: '1000gm' }
     }
   }
 ];

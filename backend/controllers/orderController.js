@@ -76,7 +76,7 @@ exports.createOrder = async (req, res) => {
 
       // Safe fallback for price
       if (priceUsed == null || isNaN(priceUsed) || priceUsed < 0) {
-        priceUsed = 35;
+        priceUsed = 6;
       }
 
       calculatedTotal += priceUsed * item.quantity;
