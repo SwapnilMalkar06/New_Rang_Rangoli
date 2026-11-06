@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,14 +13,21 @@ const SanskarBharatiColorCard = ({ color }) => {
   const isMarathi = language === 'mr';
   const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
+  const moqLimit = isWholesaler ? 10 : 1;
 
   const availableWeights = Object.keys(color.weights);
   const [selectedWeight, setSelectedWeight] = useState(
     color.weights['500gm'] ? '500gm' : availableWeights[0]
   );
-  const [packetCount, setPacketCount] = useState(1);
+  const [packetCount, setPacketCount] = useState(isWholesaler ? 10 : 1);
   const [justAdded, setJustAdded] = useState(false);
   const [isZoomed, setIsZoomed] = useState(false);
+
+  useEffect(() => {
+    if (isWholesaler && packetCount < 10) {
+      setPacketCount(10);
+    }
+  }, [isWholesaler]);
 
   const weightInfo = color.weights[selectedWeight] || color.weights['500gm'] || color.weights[availableWeights[0]];
   const unitPrice = isWholesaler ? weightInfo.wholesalePrice : weightInfo.retailPrice;
@@ -31,7 +38,7 @@ const SanskarBharatiColorCard = ({ color }) => {
   };
 
   const handleDecrement = () => {
-    setPacketCount((prev) => (prev > 1 ? prev - 1 : 1));
+    setPacketCount((prev) => (prev > moqLimit ? prev - 1 : moqLimit));
   };
 
   const handleAddToCart = () => {
@@ -235,8 +242,13 @@ const SanskarBharatiColorCard = ({ color }) => {
         {/* Packet Quantity Stepper */}
         <div className="mb-4 pt-2.5 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-              {isMarathi ? 'पाकिटे संख्या:' : 'Packets:'}
+            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span>{isMarathi ? 'पाकिटे संख्या:' : 'Packets:'}</span>
+              {isWholesaler && (
+                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-500/20">
+                  Min 10 MOQ
+                </span>
+              )}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
               ₹{unitPrice} × {packetCount}
@@ -247,7 +259,7 @@ const SanskarBharatiColorCard = ({ color }) => {
             <button
               type="button"
               onClick={handleDecrement}
-              disabled={packetCount <= 1}
+              disabled={packetCount <= moqLimit}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               aria-label="Decrease packets"
             >

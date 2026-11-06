@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
@@ -13,13 +13,20 @@ const RangoliColorCard = ({ color }) => {
   const isMarathi = language === 'mr';
   const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
+  const moqLimit = isWholesaler ? 10 : 1;
 
   const availableWeights = Object.keys(color.weights);
   const [selectedWeight, setSelectedWeight] = useState(
     color.weights['500gm'] ? '500gm' : availableWeights[0]
   );
-  const [packetCount, setPacketCount] = useState(1);
+  const [packetCount, setPacketCount] = useState(isWholesaler ? 10 : 1);
   const [justAdded, setJustAdded] = useState(false);
+
+  useEffect(() => {
+    if (isWholesaler && packetCount < 10) {
+      setPacketCount(10);
+    }
+  }, [isWholesaler]);
 
   const weightInfo = color.weights[selectedWeight] || color.weights['500gm'] || color.weights[availableWeights[0]];
   const unitPrice = isWholesaler ? weightInfo.wholesalePrice : weightInfo.retailPrice;
@@ -30,7 +37,7 @@ const RangoliColorCard = ({ color }) => {
   };
 
   const handleDecrement = () => {
-    setPacketCount((prev) => (prev > 1 ? prev - 1 : 1));
+    setPacketCount((prev) => (prev > moqLimit ? prev - 1 : moqLimit));
   };
 
   const handleAddToCart = () => {
@@ -76,14 +83,14 @@ const RangoliColorCard = ({ color }) => {
     <div className="group relative flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl border border-slate-200/80 dark:border-slate-800/80 bg-white dark:bg-slate-900 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 backdrop-blur-md">
       
       {/* Visual Top Bar / Accent Banner */}
-      <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-100 dark:bg-slate-950 flex items-center justify-center p-3 border-b border-slate-100 dark:border-slate-800">
+      <div className="relative aspect-square w-full overflow-hidden bg-gradient-to-b from-slate-100 to-slate-200/80 dark:from-slate-950 dark:to-slate-900 flex items-center justify-center p-4 border-b border-slate-100 dark:border-slate-800">
         
-        {/* Actual cropped color heap image */}
+        {/* Actual color heap image */}
         <img
           src={color.image}
           alt={color.nameEn}
           loading="lazy"
-          className="h-full w-full object-contain rounded-xl transition-transform duration-500 group-hover:scale-105"
+          className="h-44 w-44 sm:h-48 sm:w-48 object-contain rounded-2xl drop-shadow-md transition-transform duration-500 group-hover:scale-105"
           onError={(e) => {
             e.target.onerror = null;
             e.target.src = '/colors/shade-card.jpg';
@@ -91,7 +98,7 @@ const RangoliColorCard = ({ color }) => {
         />
 
         {/* Shade Number & Hex Swatch Badge */}
-        <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-slate-950/80 border border-white/20 backdrop-blur-md px-2.5 py-1 text-white shadow-lg">
+        <div className="absolute top-3 left-3 flex items-center gap-1.5 rounded-full bg-slate-950/85 border border-white/20 backdrop-blur-md px-2.5 py-1 text-white shadow-lg z-10">
           <span
             className="h-3.5 w-3.5 rounded-full border border-white/80 shadow-xs shrink-0"
             style={{ backgroundColor: color.hex }}
@@ -172,8 +179,13 @@ const RangoliColorCard = ({ color }) => {
         {/* Packet Quantity Stepper */}
         <div className="mb-4 pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between">
           <div className="flex flex-col">
-            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-              {isMarathi ? 'पाकिटांची संख्या:' : 'Packets:'}
+            <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+              <span>{isMarathi ? 'पाकिटांची संख्या:' : 'Packets:'}</span>
+              {isWholesaler && (
+                <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border border-indigo-500/20">
+                  Min 10 MOQ
+                </span>
+              )}
             </span>
             <span className="text-xs text-slate-400 dark:text-slate-500">
               ₹{unitPrice} × {packetCount}
@@ -184,7 +196,7 @@ const RangoliColorCard = ({ color }) => {
             <button
               type="button"
               onClick={handleDecrement}
-              disabled={packetCount <= 1}
+              disabled={packetCount <= moqLimit}
               className="flex h-8 w-8 items-center justify-center rounded-lg text-slate-600 dark:text-slate-300 hover:bg-white dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed transition-colors"
               aria-label="Decrease packets"
             >
