@@ -278,28 +278,8 @@ const CurrentFestivalHero = () => {
       </div>
 
       {/* Main Full-Area Container */}
-      <div className="relative w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 pt-4 pb-8 sm:pt-6 sm:pb-12 flex flex-col items-center">
+      <div className="relative w-full max-w-[1700px] mx-auto px-3 sm:px-6 lg:px-8 pt-2 pb-8 sm:pt-4 sm:pb-12 flex flex-col items-center">
         
-        {/* Real-time Festive Live Header Pill */}
-        <div className="relative z-20 mb-3 sm:mb-4 flex flex-wrap items-center justify-center gap-2 sm:gap-3 text-xs sm:text-sm">
-          <span className="inline-flex items-center gap-2 rounded-full bg-slate-900/90 border border-amber-500/40 backdrop-blur-md px-3.5 py-1.5 shadow-lg shadow-amber-500/10">
-            <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-500"></span>
-            </span>
-            <span className="font-extrabold tracking-wide text-amber-300 uppercase text-[11px] sm:text-xs">
-              {isMarathi ? '🔴 थेट चालू सण उत्सव' : '🔴 Real-Time Festival Month'}
-            </span>
-          </span>
-
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/15 backdrop-blur-md px-3.5 py-1.5 font-semibold text-slate-200 text-[11px] sm:text-xs">
-            <Calendar className="h-3.5 w-3.5 text-orange-400" />
-            <span>
-              {monthName} ({festiveMonth})
-            </span>
-          </span>
-        </div>
-
         {/* The Entire Screen Hero Area Dedicated to the Festival Image with Cinematic Animation */}
         <div className="relative w-full rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 shadow-2xl bg-slate-950 group">
           
