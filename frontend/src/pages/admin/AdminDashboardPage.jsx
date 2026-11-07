@@ -5,6 +5,7 @@ import { selectUser, selectToken, logout } from '../../store/authSlice';
 import ProductModal from './ProductModal';
 import OrderDetailModal from './OrderDetailModal';
 import RangoliColorModal from './RangoliColorModal';
+import PriceAdjustModal from './PriceAdjustModal';
 import {
   BarChart3,
   Package,
@@ -28,7 +29,8 @@ import {
   ShoppingBag,
   Store,
   ArrowUpRight,
-  Palette
+  Palette,
+  Sparkles
 } from 'lucide-react';
 
 const AdminDashboardPage = () => {
@@ -73,6 +75,11 @@ const AdminDashboardPage = () => {
   const [colorModalOpen, setColorModalOpen] = useState(false);
   const [colorToEdit, setColorToEdit] = useState(null);
   const [colorSearch, setColorSearch] = useState('');
+
+  // State: Price Adjuster Modal & Inline Stepper
+  const [priceModalOpen, setPriceModalOpen] = useState(false);
+  const [colorForPriceEdit, setColorForPriceEdit] = useState(null); // null = batch mode
+  const [updatingPriceKey, setUpdatingPriceKey] = useState(null);
 
   // State: Users
   const [usersList, setUsersList] = useState([]);
@@ -249,6 +256,37 @@ const AdminDashboardPage = () => {
       alert(err.message || 'Error updating stock');
     } finally {
       setStockUpdatingId(null);
+    }
+  };
+
+  // Quick single-packet retail price delta (+ or -)
+  const handleQuickPriceDelta = async (colorId, weightKey, delta) => {
+    try {
+      setUpdatingPriceKey(`${colorId}-${weightKey}`);
+      const res = await fetch(`/api/colors/${colorId}/price`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({ weightKey, deltaRetail: delta })
+      });
+      const data = await res.json();
+      if (data.success && data.data) {
+        const updated = data.data;
+        if (updated.colorType === 'sanskar_bharati') {
+          setSanskarColors(prev => prev.map(c => (c.id === updated.id || c._id === updated._id ? updated : c)));
+        } else {
+          setRangoliColors(prev => prev.map(c => (c.id === updated.id || c._id === updated._id ? updated : c)));
+        }
+        showToast(`${updated.nameEn} (${weightKey}) price ${delta > 0 ? '+' : ''}₹${delta}`);
+      } else {
+        showToast(data.message || 'Failed to adjust price');
+      }
+    } catch (err) {
+      showToast('Error adjusting price');
+    } finally {
+      setUpdatingPriceKey(null);
     }
   };
 
@@ -950,6 +988,42 @@ const AdminDashboardPage = () => {
             {/* SUB-VIEW 1 & 2: RANGOLI & SANSKAR BHARATI COLORS */}
             {(catalogSection === 'rangoli' || catalogSection === 'sanskar') && (
               <div className="space-y-4">
+                {/* Dedicated Pricing Manager Banner */}
+                <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-4 sm:p-5 rounded-3xl border border-orange-200/90 dark:border-orange-950/70 bg-gradient-to-r from-orange-500/10 via-amber-500/10 to-rose-500/10 dark:from-orange-950/30 dark:via-slate-900 dark:to-rose-950/30 shadow-md">
+                  <div className="flex items-center gap-3.5">
+                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/30">
+                      <DollarSign className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-sm sm:text-base font-black text-slate-900 dark:text-white font-outfit">
+                          {catalogSection === 'rangoli' ? '🌸 Rangoli Colors Pricing & Rates' : '🌀 Sanskar Bharati Powder Rates'}
+                        </h3>
+                        <span className="rounded-full bg-emerald-100 dark:bg-emerald-950/80 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800 px-2 py-0.5 text-[10px] font-extrabold uppercase">
+                          Live Store Sync
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                        Adjust packet rates individually with the <span className="font-bold text-slate-700 dark:text-slate-300">₹ Adjust Price</span> button or use the <span className="font-bold text-orange-600 dark:text-orange-400">⚡ Batch Adjuster</span> to update all shades uniformly.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setColorForPriceEdit(null); // Batch mode
+                        setPriceModalOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-orange-500 to-rose-600 hover:from-orange-600 hover:to-rose-700 text-white text-xs font-bold shadow-md shadow-orange-500/25 transition-all cursor-pointer"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span>⚡ Batch Adjust All Prices</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Search Bar for Colors */}
                 <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
                   <div className="relative w-full sm:w-80">
@@ -964,7 +1038,7 @@ const AdminDashboardPage = () => {
                   </div>
 
                   <div className="text-xs font-semibold text-slate-500">
-                    Showing {(catalogSection === 'rangoli' ? rangoliColors : sanskarColors).length} color shades • Click "Edit Shade & Sizes" to adjust packet weights and pricing.
+                    Showing {(catalogSection === 'rangoli' ? rangoliColors : sanskarColors).length} color shades • Click <strong className="text-emerald-600 dark:text-emerald-400">"Adjust Price"</strong> or <strong className="text-orange-600 dark:text-orange-400">"Edit Shade"</strong> below.
                   </div>
                 </div>
 
@@ -1001,8 +1075,9 @@ const AdminDashboardPage = () => {
                             })
                             .map((c) => {
                               const weightsEntries = c.weights ? Object.entries(c.weights) : [];
+                              const colorId = c.id || c._id;
                               return (
-                                <tr key={c.id || c._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                <tr key={colorId} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
                                   <td className="py-3 px-4">
                                     <div className="flex items-center gap-2.5">
                                       {/* Color Swatch Circle */}
@@ -1033,36 +1108,78 @@ const AdminDashboardPage = () => {
                                     </span>
                                   </td>
                                   <td className="py-3 px-4">
-                                    <div className="flex flex-wrap gap-1.5">
-                                      {weightsEntries.map(([wKey, wVal]) => (
-                                        <div
-                                          key={wKey}
-                                          className="px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-[11px]"
-                                        >
-                                          <span className="font-black text-orange-900 dark:text-orange-200 mr-1.5">
-                                            {wKey}
-                                          </span>
-                                          <span className="text-slate-700 dark:text-slate-300 font-bold">
-                                            ₹{wVal.retailPrice}
-                                          </span>
-                                          <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-[10px] ml-1">
-                                            (WS: ₹{wVal.wholesalePrice})
-                                          </span>
-                                        </div>
-                                      ))}
+                                    <div className="flex flex-wrap gap-2">
+                                      {weightsEntries.map(([wKey, wVal]) => {
+                                        const isUpdating = updatingPriceKey === `${colorId}-${wKey}`;
+                                        return (
+                                          <div
+                                            key={wKey}
+                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-50/80 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-[11px]"
+                                          >
+                                            <span className="font-black text-orange-900 dark:text-orange-200">
+                                              {wKey}:
+                                            </span>
+                                            <span className="text-slate-900 dark:text-slate-100 font-black">
+                                              ₹{wVal.retailPrice}
+                                            </span>
+                                            <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-[10px]">
+                                              (WS: ₹{wVal.wholesalePrice})
+                                            </span>
+
+                                            {/* Quick Inline Increment/Decrement Stepper */}
+                                            <div className="inline-flex items-center gap-0.5 ml-1 border-l border-orange-200 dark:border-orange-800/80 pl-1">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleQuickPriceDelta(colorId, wKey, -5)}
+                                                disabled={isUpdating}
+                                                className="h-4 w-4 rounded flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-orange-200 dark:hover:bg-orange-900 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer disabled:opacity-40"
+                                                title="Decrease retail price by ₹5"
+                                              >
+                                                -
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleQuickPriceDelta(colorId, wKey, +5)}
+                                                disabled={isUpdating}
+                                                className="h-4 w-4 rounded flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-orange-200 dark:hover:bg-orange-900 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer disabled:opacity-40"
+                                                title="Increase retail price by ₹5"
+                                              >
+                                                +
+                                              </button>
+                                            </div>
+                                          </div>
+                                        );
+                                      })}
                                     </div>
                                   </td>
                                   <td className="py-3 px-4 text-right">
-                                    <button
-                                      onClick={() => {
-                                        setColorToEdit(c);
-                                        setColorModalOpen(true);
-                                      }}
-                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-                                    >
-                                      <Edit3 className="h-3.5 w-3.5" />
-                                      <span>Edit Shade & Sizes</span>
-                                    </button>
+                                    <div className="flex items-center justify-end gap-1.5">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setColorForPriceEdit(c);
+                                          setPriceModalOpen(true);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300/80 dark:border-emerald-800 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 text-emerald-800 dark:text-emerald-300 font-bold text-xs shadow-xs transition-all cursor-pointer"
+                                        title="Adjust packet weights and prices for this shade"
+                                      >
+                                        <DollarSign className="h-3.5 w-3.5" />
+                                        <span>Adjust Price</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setColorToEdit(c);
+                                          setColorModalOpen(true);
+                                        }}
+                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                                        title="Edit shade details, swatch, photos and packet sizes"
+                                      >
+                                        <Edit3 className="h-3.5 w-3.5" />
+                                        <span>Edit Shade</span>
+                                      </button>
+                                    </div>
                                   </td>
                                 </tr>
                               );
@@ -1385,6 +1502,32 @@ const AdminDashboardPage = () => {
         onSaved={(updatedColor) => {
           showToast(`Color shade "${updatedColor.nameEn}" & packet sizes saved!`);
           fetchColors();
+        }}
+      />
+
+      {/* Rangoli Price Adjustment Modal (Single Shade & Batch Mode) */}
+      <PriceAdjustModal
+        isOpen={priceModalOpen}
+        onClose={() => {
+          setPriceModalOpen(false);
+          setColorForPriceEdit(null);
+        }}
+        targetColor={colorForPriceEdit}
+        defaultCatalogType={catalogSection}
+        totalShadesCount={catalogSection === 'rangoli' ? rangoliColors.length || 23 : sanskarColors.length || 16}
+        token={token}
+        onSaved={(savedColor) => {
+          if (savedColor) {
+            if (savedColor.colorType === 'sanskar_bharati') {
+              setSanskarColors(prev => prev.map(c => (c.id === savedColor.id || c._id === savedColor._id ? savedColor : c)));
+            } else {
+              setRangoliColors(prev => prev.map(c => (c.id === savedColor.id || c._id === savedColor._id ? savedColor : c)));
+            }
+            showToast(`Price for "${savedColor.nameEn}" updated!`);
+          } else {
+            showToast('Batch prices adjusted successfully across all shades!');
+            fetchColors();
+          }
         }}
       />
 

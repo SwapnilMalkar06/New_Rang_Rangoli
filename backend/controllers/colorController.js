@@ -253,3 +253,176 @@ exports.deleteColor = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Quick update price of packet weight variants for a single shade
+ * @route   PUT /api/colors/:id/price
+ * @access  Private/Admin
+ */
+exports.updateColorPrice = async (req, res) => {
+  try {
+    const identifier = req.params.id;
+    const { weightKey, retailPrice, wholesalePrice, weights, deltaRetail, deltaWholesale } = req.body;
+
+    let color = await RangoliColor.findOne({
+      $or: [{ id: identifier }, { _id: identifier.match(/^[0-9a-fA-F]{24}$/) ? identifier : null }]
+    });
+
+    if (!color) {
+      return res.status(404).json({ success: false, message: 'Color shade not found' });
+    }
+
+    const currentWeights = color.weights || {};
+
+    // 1. If multi-weights map is passed
+    if (weights && typeof weights === 'object') {
+      Object.entries(weights).forEach(([wKey, val]) => {
+        if (!currentWeights[wKey]) {
+          currentWeights[wKey] = { label: val.label || wKey, retailPrice: 0, wholesalePrice: 0 };
+        }
+        if (val.retailPrice !== undefined && val.retailPrice !== '') {
+          currentWeights[wKey].retailPrice = Math.max(0, Number(val.retailPrice));
+        }
+        if (val.wholesalePrice !== undefined && val.wholesalePrice !== '') {
+          currentWeights[wKey].wholesalePrice = Math.max(0, Number(val.wholesalePrice));
+        }
+        if (val.label) {
+          currentWeights[wKey].label = val.label;
+        }
+      });
+    }
+
+    // 2. If single weightKey is passed
+    if (weightKey) {
+      if (!currentWeights[weightKey]) {
+        currentWeights[weightKey] = { label: weightKey, retailPrice: 0, wholesalePrice: 0 };
+      }
+
+      if (retailPrice !== undefined && retailPrice !== '') {
+        currentWeights[weightKey].retailPrice = Math.max(0, Number(retailPrice));
+      }
+      if (wholesalePrice !== undefined && wholesalePrice !== '') {
+        currentWeights[weightKey].wholesalePrice = Math.max(0, Number(wholesalePrice));
+      }
+
+      // Delta increments
+      if (deltaRetail !== undefined) {
+        currentWeights[weightKey].retailPrice = Math.max(0, (currentWeights[weightKey].retailPrice || 0) + Number(deltaRetail));
+      }
+      if (deltaWholesale !== undefined) {
+        currentWeights[weightKey].wholesalePrice = Math.max(0, (currentWeights[weightKey].wholesalePrice || 0) + Number(deltaWholesale));
+      }
+    }
+
+    // 3. If global delta applied across all existing weights of this shade
+    if (!weightKey && !weights && (deltaRetail !== undefined || deltaWholesale !== undefined)) {
+      Object.keys(currentWeights).forEach(wKey => {
+        if (deltaRetail !== undefined) {
+          currentWeights[wKey].retailPrice = Math.max(0, (currentWeights[wKey].retailPrice || 0) + Number(deltaRetail));
+        }
+        if (deltaWholesale !== undefined) {
+          currentWeights[wKey].wholesalePrice = Math.max(0, (currentWeights[wKey].wholesalePrice || 0) + Number(deltaWholesale));
+        }
+      });
+    }
+
+    color.weights = currentWeights;
+    color.markModified('weights');
+    const updated = await color.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Price for ${color.nameEn} updated successfully`,
+      data: updated
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to update color price',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Batch update pricing across multiple shades or entire catalog
+ * @route   POST /api/colors/batch-pricing
+ * @access  Private/Admin
+ */
+exports.batchUpdatePricing = async (req, res) => {
+  try {
+    const { colorType, category, pricing, deltaPricing, shadeIds } = req.body;
+
+    const query = {};
+    if (colorType && colorType !== 'all') {
+      query.colorType = colorType;
+    }
+    if (category && category !== 'All') {
+      query.category = category;
+    }
+    if (Array.isArray(shadeIds) && shadeIds.length > 0) {
+      query.$or = [
+        { id: { $in: shadeIds } },
+        { _id: { $in: shadeIds.filter(id => id.match(/^[0-9a-fA-F]{24}$/)) } }
+      ];
+    }
+
+    const colors = await RangoliColor.find(query);
+
+    if (colors.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No matching colors found for the specified filters'
+      });
+    }
+
+    for (const c of colors) {
+      const currentWeights = c.weights || {};
+
+      // Fixed rate mapping
+      if (pricing && typeof pricing === 'object') {
+        Object.entries(pricing).forEach(([wKey, wVal]) => {
+          if (!currentWeights[wKey]) {
+            currentWeights[wKey] = { label: wKey, retailPrice: 0, wholesalePrice: 0 };
+          }
+          if (wVal.retailPrice !== undefined && wVal.retailPrice !== '') {
+            currentWeights[wKey].retailPrice = Math.max(0, Number(wVal.retailPrice));
+          }
+          if (wVal.wholesalePrice !== undefined && wVal.wholesalePrice !== '') {
+            currentWeights[wKey].wholesalePrice = Math.max(0, Number(wVal.wholesalePrice));
+          }
+        });
+      }
+
+      // Delta offset mapping
+      if (deltaPricing && typeof deltaPricing === 'object') {
+        Object.entries(deltaPricing).forEach(([wKey, dVal]) => {
+          if (currentWeights[wKey]) {
+            if (dVal.deltaRetail !== undefined) {
+              currentWeights[wKey].retailPrice = Math.max(0, (currentWeights[wKey].retailPrice || 0) + Number(dVal.deltaRetail));
+            }
+            if (dVal.deltaWholesale !== undefined) {
+              currentWeights[wKey].wholesalePrice = Math.max(0, (currentWeights[wKey].wholesalePrice || 0) + Number(dVal.deltaWholesale));
+            }
+          }
+        });
+      }
+
+      c.weights = currentWeights;
+      c.markModified('weights');
+      await c.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      count: colors.length,
+      message: `Successfully updated pricing across ${colors.length} shades!`
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to batch update pricing',
+      error: error.message
+    });
+  }
+};
