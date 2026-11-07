@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useSelector } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
@@ -25,16 +25,29 @@ const RangoliColorCatalog = ({ isEmbedded = false, externalSearch = '' }) => {
   const cartItems = useSelector(selectCartItems);
   const cartTotal = useSelector((state) => selectCartTotal(state, isWholesaler));
 
+  const [colorsList, setColorsList] = useState(RANGOLI_COLORS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [showShadeCardModal, setShowShadeCardModal] = useState(false);
+
+  // Fetch updated catalog from backend
+  useEffect(() => {
+    fetch('/api/colors?type=rangoli')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.rangoli?.length > 0) {
+          setColorsList(data.data.rangoli);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   // Active search query (either passed from shop search or local search)
   const activeSearch = (externalSearch || searchQuery).toLowerCase().trim();
 
   // Filter colors based on category and search query
   const filteredColors = useMemo(() => {
-    return RANGOLI_COLORS.filter((color) => {
+    return colorsList.filter((color) => {
       // Category filter
       if (selectedCategory === 'standard' && color.category !== 'Standard') return false;
       if (selectedCategory === 'fluorescent' && color.category !== 'Fluorescent') return false;
@@ -51,7 +64,7 @@ const RangoliColorCatalog = ({ isEmbedded = false, externalSearch = '' }) => {
 
       return true;
     });
-  }, [selectedCategory, activeSearch]);
+  }, [selectedCategory, activeSearch, colorsList]);
 
   const totalCartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 

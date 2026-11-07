@@ -7,6 +7,7 @@ const authRoutes = require('./routes/authRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
 const adminRoutes = require('./routes/adminRoutes');
+const colorRoutes = require('./routes/colorRoutes');
 const Product = require('./models/Product');
 const User = require('./models/User');
 
@@ -23,6 +24,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/colors', colorRoutes);
 
 // Root route
 app.get('/', (req, res) => {

@@ -4,6 +4,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { selectUser, selectToken, logout } from '../../store/authSlice';
 import ProductModal from './ProductModal';
 import OrderDetailModal from './OrderDetailModal';
+import RangoliColorModal from './RangoliColorModal';
 import {
   BarChart3,
   Package,
@@ -26,7 +27,8 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
-  ArrowUpRight
+  ArrowUpRight,
+  Palette
 } from 'lucide-react';
 
 const AdminDashboardPage = () => {
@@ -62,6 +64,15 @@ const AdminDashboardPage = () => {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
   const [stockUpdatingId, setStockUpdatingId] = useState(null);
+
+  // State: Rangoli Colors & Packet Sizes
+  const [catalogSection, setCatalogSection] = useState('rangoli'); // 'rangoli', 'sanskar', 'general'
+  const [rangoliColors, setRangoliColors] = useState([]);
+  const [sanskarColors, setSanskarColors] = useState([]);
+  const [loadingColors, setLoadingColors] = useState(false);
+  const [colorModalOpen, setColorModalOpen] = useState(false);
+  const [colorToEdit, setColorToEdit] = useState(null);
+  const [colorSearch, setColorSearch] = useState('');
 
   // State: Users
   const [usersList, setUsersList] = useState([]);
@@ -173,23 +184,44 @@ const AdminDashboardPage = () => {
     }
   }, [token, userRoleFilter, userSearch]);
 
+  // Fetch Colors & Packet Sizes
+  const fetchColors = useCallback(async () => {
+    try {
+      setLoadingColors(true);
+      const res = await fetch('/api/colors');
+      const data = await res.json();
+      if (data.success && data.data) {
+        setRangoliColors(data.data.rangoli || []);
+        setSanskarColors(data.data.sanskarBharati || []);
+      }
+    } catch (err) {
+      console.error('Error fetching color shades:', err);
+    } finally {
+      setLoadingColors(false);
+    }
+  }, []);
+
   // Master Refresh
   const handleMasterRefresh = async () => {
     setRefreshing(true);
-    await Promise.all([fetchStats(), fetchOrders(), fetchProducts(), fetchUsers()]);
+    await Promise.all([fetchStats(), fetchOrders(), fetchProducts(), fetchUsers(), fetchColors()]);
     setRefreshing(false);
     showToast('Dashboard data refreshed.');
   };
 
   useEffect(() => {
     fetchStats();
-  }, [fetchStats]);
+    fetchColors();
+  }, [fetchStats, fetchColors]);
 
   useEffect(() => {
     if (activeTab === 'orders') fetchOrders();
-    if (activeTab === 'products') fetchProducts();
+    if (activeTab === 'products') {
+      fetchProducts();
+      fetchColors();
+    }
     if (activeTab === 'users') fetchUsers();
-  }, [activeTab, fetchOrders, fetchProducts, fetchUsers]);
+  }, [activeTab, fetchOrders, fetchProducts, fetchUsers, fetchColors]);
 
   // Adjust Product Stock atomically (+ or -)
   const handleAdjustStock = async (productId, delta) => {
@@ -867,172 +899,353 @@ const AdminDashboardPage = () => {
         {activeTab === 'products' && (
           <div className="space-y-6 animate-fade-in text-left">
             
-            {/* Products Action & Filter Row */}
-            <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
-              <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto flex-1">
-                <div className="relative w-full sm:w-72">
-                  <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="text"
-                    value={productSearch}
-                    onChange={(e) => setProductSearch(e.target.value)}
-                    placeholder="Search catalog products..."
-                    className="w-full pl-10 pr-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
-                  />
-                </div>
-
-                <select
-                  value={productCategoryFilter}
-                  onChange={(e) => setProductCategoryFilter(e.target.value)}
-                  className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
-                >
-                  <option value="All">All Categories</option>
-                  <option value="Rangoli">Rangoli</option>
-                  <option value="Sanskar Bharati Rangoli">Sanskar Bharati Rangoli</option>
-                  <option value="Portrait Color">Portrait Color</option>
-                  <option value="Fluorescent Color">Fluorescent Color</option>
-                  <option value="Tools">Tools</option>
-                  <option value="Holi Color">Holi Color</option>
-                  <option value="Gulal">Gulal</option>
-                </select>
-
-                <select
-                  value={productStockFilter}
-                  onChange={(e) => setProductStockFilter(e.target.value)}
-                  className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
-                >
-                  <option value="All">All Stock Levels</option>
-                  <option value="low">Low Stock (≤20)</option>
-                  <option value="out">Out of Stock (0)</option>
-                  <option value="instock">Healthy Stock (&gt;20)</option>
-                </select>
-              </div>
+            {/* Catalog Section Switcher Sub-Tabs */}
+            <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
+              <button
+                type="button"
+                onClick={() => setCatalogSection('rangoli')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  catalogSection === 'rangoli'
+                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md shadow-orange-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>🌸 23 Rangoli Color Shades & Packet Sizes</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
+                  {rangoliColors.length || 23}
+                </span>
+              </button>
 
               <button
-                onClick={() => {
-                  setProductToEdit(null);
-                  setProductModalOpen(true);
-                }}
-                className="w-full lg:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-orange-600 hover:to-rose-700 transition-all cursor-pointer"
+                type="button"
+                onClick={() => setCatalogSection('sanskar')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  catalogSection === 'sanskar'
+                    ? 'bg-gradient-to-r from-rose-500 to-pink-500 text-white shadow-md shadow-rose-500/20'
+                    : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
               >
-                <Plus className="h-4 w-4" />
-                <span>Add New Product</span>
+                <span>🌀 16 Sanskar Bharati Powders & Sizes</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-white/20">
+                  {sanskarColors.length || 16}
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setCatalogSection('general')}
+                className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold transition-all cursor-pointer ${
+                  catalogSection === 'general'
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md'
+                    : 'bg-slate-100 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                <span>📦 Tools, Stencils & Kits</span>
+                <span className="px-1.5 py-0.5 rounded-full text-[10px] bg-slate-200 dark:bg-slate-700">
+                  {products.length}
+                </span>
               </button>
             </div>
 
-            {/* Products Table */}
-            <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
-              {loadingProducts ? (
-                <div className="py-20 text-center">
-                  <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
-                  <p className="mt-2 text-xs text-slate-400">Loading catalog items...</p>
+            {/* SUB-VIEW 1 & 2: RANGOLI & SANSKAR BHARATI COLORS */}
+            {(catalogSection === 'rangoli' || catalogSection === 'sanskar') && (
+              <div className="space-y-4">
+                {/* Search Bar for Colors */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
+                  <div className="relative w-full sm:w-80">
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={colorSearch}
+                      onChange={(e) => setColorSearch(e.target.value)}
+                      placeholder="Search shade by number, name, category..."
+                      className="w-full pl-10 pr-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
+                    />
+                  </div>
+
+                  <div className="text-xs font-semibold text-slate-500">
+                    Showing {(catalogSection === 'rangoli' ? rangoliColors : sanskarColors).length} color shades • Click "Edit Shade & Sizes" to adjust packet weights and pricing.
+                  </div>
                 </div>
-              ) : products.length === 0 ? (
-                <div className="py-20 text-center text-xs text-slate-400">
-                  No products found.
+
+                {/* Colors & Packet Sizes Table */}
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
+                  {loadingColors ? (
+                    <div className="py-20 text-center">
+                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+                      <p className="mt-2 text-xs text-slate-400">Loading color shades and packet sizes...</p>
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
+                          <tr>
+                            <th className="py-3 px-4">Swatch & Photo</th>
+                            <th className="py-3 px-4">Shade Details</th>
+                            <th className="py-3 px-4">Category</th>
+                            <th className="py-3 px-4">Configured Packet Sizes & Rates</th>
+                            <th className="py-3 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {(catalogSection === 'rangoli' ? rangoliColors : sanskarColors)
+                            .filter(c => {
+                              if (!colorSearch.trim()) return true;
+                              const q = colorSearch.toLowerCase();
+                              return (
+                                (c.nameEn && c.nameEn.toLowerCase().includes(q)) ||
+                                (c.nameMr && c.nameMr.toLowerCase().includes(q)) ||
+                                (c.number && c.number.toLowerCase().includes(q)) ||
+                                (c.category && c.category.toLowerCase().includes(q))
+                              );
+                            })
+                            .map((c) => {
+                              const weightsEntries = c.weights ? Object.entries(c.weights) : [];
+                              return (
+                                <tr key={c.id || c._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                                  <td className="py-3 px-4">
+                                    <div className="flex items-center gap-2.5">
+                                      {/* Color Swatch Circle */}
+                                      <div
+                                        className="h-8 w-8 shrink-0 rounded-full border-2 border-white dark:border-slate-800 shadow-md"
+                                        style={{ backgroundColor: c.hex }}
+                                        title={`Hex: ${c.hex}`}
+                                      />
+                                      {/* Image */}
+                                      <img
+                                        src={c.image || '/colors/shade-card.jpg'}
+                                        alt={c.nameEn}
+                                        className="h-10 w-10 shrink-0 rounded-xl object-contain bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700"
+                                        onError={(e) => { e.target.src = '/colors/shade-card.jpg'; }}
+                                      />
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <p className="font-black text-slate-900 dark:text-white">{c.nameEn}</p>
+                                    {c.nameMr && (
+                                      <p className="text-[10px] text-slate-400 mt-0.5">{c.nameMr}</p>
+                                    )}
+                                    <span className="font-mono text-[9px] text-slate-400">Hex: {c.hex}</span>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                                      {c.category}
+                                    </span>
+                                  </td>
+                                  <td className="py-3 px-4">
+                                    <div className="flex flex-wrap gap-1.5">
+                                      {weightsEntries.map(([wKey, wVal]) => (
+                                        <div
+                                          key={wKey}
+                                          className="px-2.5 py-1 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-[11px]"
+                                        >
+                                          <span className="font-black text-orange-900 dark:text-orange-200 mr-1.5">
+                                            {wKey}
+                                          </span>
+                                          <span className="text-slate-700 dark:text-slate-300 font-bold">
+                                            ₹{wVal.retailPrice}
+                                          </span>
+                                          <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-[10px] ml-1">
+                                            (WS: ₹{wVal.wholesalePrice})
+                                          </span>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td className="py-3 px-4 text-right">
+                                    <button
+                                      onClick={() => {
+                                        setColorToEdit(c);
+                                        setColorModalOpen(true);
+                                      }}
+                                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                                    >
+                                      <Edit3 className="h-3.5 w-3.5" />
+                                      <span>Edit Shade & Sizes</span>
+                                    </button>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left text-xs">
-                    <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
-                      <tr>
-                        <th className="py-3 px-4">Product Details</th>
-                        <th className="py-3 px-4">Category</th>
-                        <th className="py-3 px-4">Retail Price</th>
-                        <th className="py-3 px-4">Wholesale Rate</th>
-                        <th className="py-3 px-4">Stock Level</th>
-                        <th className="py-3 px-4 text-center">Quick Adjust</th>
-                        <th className="py-3 px-4 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                      {products.map(prod => (
-                        <tr key={prod._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
-                          <td className="py-3 px-4">
-                            <div className="flex items-center gap-3">
-                              <img
-                                src={prod.imageUrls?.[0] || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=200'}
-                                alt={prod.name}
-                                className="h-10 w-10 shrink-0 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
-                                onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=200'; }}
-                              />
-                              <div>
-                                <p className="font-bold text-slate-900 dark:text-white">{prod.name}</p>
-                                {prod.nameMR && (
-                                  <p className="text-[10px] text-slate-400">{prod.nameMR}</p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300">
-                              {prod.mainCategory}
-                            </span>
-                            <span className="block text-[10px] text-slate-400 mt-0.5">
-                              {prod.subCategory}
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
-                            ₹{prod.price}
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className="font-bold text-indigo-600 dark:text-indigo-400">₹{prod.wholesalePrice}</span>
-                            <span className="block text-[9px] text-slate-400">MOQ: {prod.minWholesaleQuantity || 20} pcs</span>
-                          </td>
-                          <td className="py-3 px-4">
-                            <span className={`px-2 py-0.5 rounded-full text-xs font-black ${prod.stockQuantity <= 0 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : prod.stockQuantity <= 20 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
-                              {prod.stockQuantity} in stock
-                            </span>
-                          </td>
-                          <td className="py-3 px-4 text-center">
-                            <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
-                              <button
-                                onClick={() => handleAdjustStock(prod._id, -10)}
-                                disabled={stockUpdatingId === prod._id || prod.stockQuantity <= 0}
-                                className="h-6 w-6 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-black hover:bg-slate-200 transition-colors disabled:opacity-40 cursor-pointer"
-                                title="Deduct 10"
-                              >
-                                -
-                              </button>
-                              <span className="text-[11px] font-mono px-1 font-bold">10</span>
-                              <button
-                                onClick={() => handleAdjustStock(prod._id, 10)}
-                                disabled={stockUpdatingId === prod._id}
-                                className="h-6 w-6 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-black hover:bg-slate-200 transition-colors disabled:opacity-40 cursor-pointer"
-                                title="Add 10"
-                              >
-                                +
-                              </button>
-                            </div>
-                          </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-1.5">
-                              <button
-                                onClick={() => {
-                                  setProductToEdit(prod);
-                                  setProductModalOpen(true);
-                                }}
-                                className="p-1.5 rounded-lg text-slate-500 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-                                title="Edit Product"
-                              >
-                                <Edit3 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => handleDeleteProduct(prod)}
-                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
-                                title="Delete Product"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              </div>
+            )}
+
+            {/* SUB-VIEW 3: GENERAL PRODUCTS, STENCILS & TOOLS */}
+            {catalogSection === 'general' && (
+              <div className="space-y-6">
+                {/* Products Action & Filter Row */}
+                <div className="flex flex-col lg:flex-row items-center justify-between gap-4 p-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-md">
+                  <div className="flex flex-col sm:flex-row items-center gap-3 w-full lg:w-auto flex-1">
+                    <div className="relative w-full sm:w-72">
+                      <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        value={productSearch}
+                        onChange={(e) => setProductSearch(e.target.value)}
+                        placeholder="Search catalog products..."
+                        className="w-full pl-10 pr-3.5 py-2 text-xs sm:text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
+                      />
+                    </div>
+
+                    <select
+                      value={productCategoryFilter}
+                      onChange={(e) => setProductCategoryFilter(e.target.value)}
+                      className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="All">All Categories</option>
+                      <option value="Rangoli">Rangoli</option>
+                      <option value="Sanskar Bharati Rangoli">Sanskar Bharati Rangoli</option>
+                      <option value="Portrait Color">Portrait Color</option>
+                      <option value="Fluorescent Color">Fluorescent Color</option>
+                      <option value="Tools">Tools</option>
+                      <option value="Holi Color">Holi Color</option>
+                      <option value="Gulal">Gulal</option>
+                    </select>
+
+                    <select
+                      value={productStockFilter}
+                      onChange={(e) => setProductStockFilter(e.target.value)}
+                      className="w-full sm:w-auto rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                    >
+                      <option value="All">All Stock Levels</option>
+                      <option value="low">Low Stock (≤20)</option>
+                      <option value="out">Out of Stock (0)</option>
+                      <option value="instock">Healthy Stock (&gt;20)</option>
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={() => {
+                      setProductToEdit(null);
+                      setProductModalOpen(true);
+                    }}
+                    className="w-full lg:w-auto flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 px-4 py-2 text-xs font-bold text-white shadow-md hover:from-orange-600 hover:to-rose-700 transition-all cursor-pointer"
+                  >
+                    <Plus className="h-4 w-4" />
+                    <span>Add New Product</span>
+                  </button>
                 </div>
-              )}
-            </div>
+
+                {/* Products Table */}
+                <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden">
+                  {loadingProducts ? (
+                    <div className="py-20 text-center">
+                      <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent" />
+                      <p className="mt-2 text-xs text-slate-400">Loading catalog items...</p>
+                    </div>
+                  ) : products.length === 0 ? (
+                    <div className="py-20 text-center text-xs text-slate-400">
+                      No products found.
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-50 dark:bg-slate-950/60 text-slate-500 font-bold border-b border-slate-200 dark:border-slate-800">
+                          <tr>
+                            <th className="py-3 px-4">Product Details</th>
+                            <th className="py-3 px-4">Category</th>
+                            <th className="py-3 px-4">Retail Price</th>
+                            <th className="py-3 px-4">Wholesale Rate</th>
+                            <th className="py-3 px-4">Stock Level</th>
+                            <th className="py-3 px-4 text-center">Quick Adjust</th>
+                            <th className="py-3 px-4 text-right">Actions</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                          {products.map(prod => (
+                            <tr key={prod._id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                              <td className="py-3 px-4">
+                                <div className="flex items-center gap-3">
+                                  <img
+                                    src={prod.imageUrls?.[0] || 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=200'}
+                                    alt={prod.name}
+                                    className="h-10 w-10 shrink-0 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                                    onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=200'; }}
+                                  />
+                                  <div>
+                                    <p className="font-bold text-slate-900 dark:text-white">{prod.name}</p>
+                                    {prod.nameMR && (
+                                      <p className="text-[10px] text-slate-400">{prod.nameMR}</p>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-700 dark:text-slate-300">
+                                  {prod.mainCategory}
+                                </span>
+                                <span className="block text-[10px] text-slate-400 mt-0.5">
+                                  {prod.subCategory}
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 font-bold text-slate-900 dark:text-white">
+                                ₹{prod.price}
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className="font-bold text-indigo-600 dark:text-indigo-400">₹{prod.wholesalePrice}</span>
+                                <span className="block text-[9px] text-slate-400">MOQ: {prod.minWholesaleQuantity || 20} pcs</span>
+                              </td>
+                              <td className="py-3 px-4">
+                                <span className={`px-2 py-0.5 rounded-full text-xs font-black ${prod.stockQuantity <= 0 ? 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300' : prod.stockQuantity <= 20 ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'}`}>
+                                  {prod.stockQuantity} in stock
+                                </span>
+                              </td>
+                              <td className="py-3 px-4 text-center">
+                                <div className="inline-flex items-center gap-1 rounded-xl bg-slate-100 dark:bg-slate-800 p-1">
+                                  <button
+                                    onClick={() => handleAdjustStock(prod._id, -10)}
+                                    disabled={stockUpdatingId === prod._id || prod.stockQuantity <= 0}
+                                    className="h-6 w-6 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-black hover:bg-slate-200 transition-colors disabled:opacity-40 cursor-pointer"
+                                    title="Deduct 10"
+                                  >
+                                    -
+                                  </button>
+                                  <span className="text-[11px] font-mono px-1 font-bold">10</span>
+                                  <button
+                                    onClick={() => handleAdjustStock(prod._id, 10)}
+                                    disabled={stockUpdatingId === prod._id}
+                                    className="h-6 w-6 rounded-lg bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-black hover:bg-slate-200 transition-colors disabled:opacity-40 cursor-pointer"
+                                    title="Add 10"
+                                  >
+                                    +
+                                  </button>
+                                </div>
+                              </td>
+                              <td className="py-3 px-4 text-right">
+                                <div className="flex items-center justify-end gap-1.5">
+                                  <button
+                                    onClick={() => {
+                                      setProductToEdit(prod);
+                                      setProductModalOpen(true);
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-500 hover:text-orange-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                                    title="Edit Product"
+                                  >
+                                    <Edit3 className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteProduct(prod)}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors cursor-pointer"
+                                    title="Delete Product"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -1157,6 +1370,21 @@ const AdminDashboardPage = () => {
           showToast(productToEdit ? 'Product updated successfully' : 'Product created successfully');
           fetchProducts();
           fetchStats();
+        }}
+      />
+
+      {/* Rangoli Color Shade & Packet Sizes Modal */}
+      <RangoliColorModal
+        isOpen={colorModalOpen}
+        onClose={() => {
+          setColorModalOpen(false);
+          setColorToEdit(null);
+        }}
+        colorToEdit={colorToEdit}
+        token={token}
+        onSaved={(updatedColor) => {
+          showToast(`Color shade "${updatedColor.nameEn}" & packet sizes saved!`);
+          fetchColors();
         }}
       />
 

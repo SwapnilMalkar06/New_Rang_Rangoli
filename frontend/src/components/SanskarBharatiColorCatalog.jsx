@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useLanguage } from '../context/LanguageContext';
 import { SANSKAR_BHARATI_COLORS } from '../data/sanskarBharatiColorsData';
 import SanskarBharatiColorCard from './SanskarBharatiColorCard';
@@ -18,15 +18,28 @@ const SanskarBharatiColorCatalog = ({ isEmbedded = false, externalSearch = '' })
   const { language } = useLanguage();
   const isMarathi = language === 'mr';
 
+  const [colorsList, setColorsList] = useState(SANSKAR_BHARATI_COLORS);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedGroup, setSelectedGroup] = useState('all');
   const [showChartModal, setShowChartModal] = useState(false);
+
+  // Fetch updated catalog from backend
+  useEffect(() => {
+    fetch('/api/colors?type=sanskar_bharati')
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.data?.sanskarBharati?.length > 0) {
+          setColorsList(data.data.sanskarBharati);
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const activeSearch = (externalSearch || searchQuery).toLowerCase().trim();
 
   // Filter colors
   const filteredColors = useMemo(() => {
-    return SANSKAR_BHARATI_COLORS.filter((color) => {
+    return colorsList.filter((color) => {
       // Group filter
       if (selectedGroup === 'warm' && !['Vibrant Warm'].includes(color.category)) return false;
       if (selectedGroup === 'royal' && !['Deep Royal', 'Cool Pastel'].includes(color.category)) return false;
@@ -45,7 +58,7 @@ const SanskarBharatiColorCatalog = ({ isEmbedded = false, externalSearch = '' })
 
       return true;
     });
-  }, [selectedGroup, activeSearch]);
+  }, [selectedGroup, activeSearch, colorsList]);
 
   return (
     <div className={`w-full ${isEmbedded ? 'py-2' : 'py-8 md:py-14 bg-slate-50 dark:bg-slate-950'} text-slate-900 dark:text-slate-100 transition-colors duration-300`}>
