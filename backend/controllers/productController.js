@@ -288,3 +288,102 @@ exports.getProductById = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Update an existing product
+ * @route   PUT /api/products/:id
+ * @access  Private/Admin
+ */
+exports.updateProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    const {
+      name,
+      nameMR,
+      description,
+      descriptionMR,
+      mainCategory,
+      subCategory,
+      price,
+      wholesalePrice,
+      minWholesaleQuantity,
+      stockQuantity,
+      imageUrls,
+      tags,
+      seasonalDiscount
+    } = req.body;
+
+    if (name !== undefined) product.name = name;
+    if (nameMR !== undefined) product.nameMR = nameMR;
+    if (description !== undefined) product.description = description;
+    if (descriptionMR !== undefined) product.descriptionMR = descriptionMR;
+    if (mainCategory !== undefined) product.mainCategory = mainCategory;
+    if (subCategory !== undefined) product.subCategory = subCategory;
+    if (price !== undefined) product.price = Number(price);
+    if (wholesalePrice !== undefined) product.wholesalePrice = Number(wholesalePrice);
+    if (minWholesaleQuantity !== undefined) product.minWholesaleQuantity = Number(minWholesaleQuantity);
+    if (stockQuantity !== undefined) product.stockQuantity = Number(stockQuantity);
+    if (imageUrls !== undefined) product.imageUrls = imageUrls;
+    if (tags !== undefined) product.tags = tags;
+    if (seasonalDiscount !== undefined) product.seasonalDiscount = seasonalDiscount;
+
+    const updatedProduct = await product.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Product updated successfully',
+      data: updatedProduct
+    });
+  } catch (error) {
+    if (error.name === 'ValidationError') {
+      const messages = Object.values(error.errors).map(val => val.message);
+      return res.status(400).json({
+        success: false,
+        message: 'Validation failed',
+        errors: messages
+      });
+    }
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating product',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Delete a product
+ * @route   DELETE /api/products/:id
+ * @access  Private/Admin
+ */
+exports.deleteProduct = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({
+        success: false,
+        message: 'Product not found'
+      });
+    }
+
+    await Product.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({
+      success: true,
+      message: 'Product deleted successfully'
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error deleting product',
+      error: error.message
+    });
+  }
+};

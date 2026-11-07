@@ -173,3 +173,119 @@ exports.getOrderById = async (req, res) => {
     });
   }
 };
+
+/**
+ * @desc    Get all orders (Admin only) with pagination, search, and filtering
+ * @route   GET /api/orders
+ * @access  Private/Admin
+ */
+exports.getAllOrders = async (req, res) => {
+  try {
+    const { fulfillmentStatus, paymentStatus, search, page = 1, limit = 50 } = req.query;
+    const query = {};
+
+    if (fulfillmentStatus && fulfillmentStatus !== 'All') {
+      query.fulfillmentStatus = fulfillmentStatus;
+    }
+    if (paymentStatus && paymentStatus !== 'All') {
+      query.paymentStatus = paymentStatus;
+    }
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { customerName: searchRegex },
+        { customerEmail: searchRegex },
+        { customerPhone: searchRegex },
+        { shippingAddress: searchRegex },
+        { transactionId: searchRegex }
+      ];
+    }
+
+    const pageNum = Math.max(1, parseInt(page, 10) || 1);
+    const limitNum = Math.max(1, parseInt(limit, 10) || 50);
+    const skip = (pageNum - 1) * limitNum;
+
+    const totalOrders = await Order.countDocuments(query);
+    const orders = await Order.find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNum);
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      pagination: {
+        totalOrders,
+        totalPages: Math.ceil(totalOrders / limitNum) || 1,
+        currentPage: pageNum,
+        limit: limitNum
+      },
+      data: orders
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving all orders',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Update order fulfillment and/or payment status
+ * @route   PUT /api/orders/:id/status
+ * @access  Private/Admin
+ */
+exports.updateOrderStatus = async (req, res) => {
+  try {
+    const { fulfillmentStatus, paymentStatus } = req.body;
+    const updateData = {};
+
+    if (fulfillmentStatus) {
+      const validFulfillment = ['Processing', 'Shipped', 'Delivered', 'Ready-for-Pickup'];
+      if (!validFulfillment.includes(fulfillmentStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid fulfillment status. Allowed: ${validFulfillment.join(', ')}`
+        });
+      }
+      updateData.fulfillmentStatus = fulfillmentStatus;
+    }
+
+    if (paymentStatus) {
+      const validPayment = ['Pending', 'Paid', 'Failed'];
+      if (!validPayment.includes(paymentStatus)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid payment status. Allowed: ${validPayment.join(', ')}`
+        });
+      }
+      updateData.paymentStatus = paymentStatus;
+    }
+
+    const order = await Order.findByIdAndUpdate(
+      req.params.id,
+      { $set: updateData },
+      { new: true, runValidators: true }
+    );
+
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Order status updated successfully',
+      data: order
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error updating order status',
+      error: error.message
+    });
+  }
+};

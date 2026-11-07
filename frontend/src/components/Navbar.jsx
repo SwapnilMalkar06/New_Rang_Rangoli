@@ -3,8 +3,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLanguage } from '../context/LanguageContext';
 import { selectCartItems } from '../store/cartSlice';
-import { logout, selectUser, selectIsWholesaler } from '../store/authSlice';
-import { ShoppingCart, Languages, LogOut, User, Store, Package } from 'lucide-react';
+import { logout, selectUser, selectIsWholesaler, selectIsAdmin } from '../store/authSlice';
+import { ShoppingCart, Languages, LogOut, User, Store, Package, ShieldCheck } from 'lucide-react';
 
 const CATEGORIES = [
   { key: 'Rangoli', labelKey: 'catRangoli', emoji: '🌸', desc: 'Traditional fine colors', colorClass: 'hover:text-orange-500 dark:hover:text-orange-400 hover:bg-orange-50/50 dark:hover:bg-orange-950/20' },
@@ -23,6 +23,7 @@ const Navbar = () => {
   const cartItems = useSelector(selectCartItems);
   const user = useSelector(selectUser);
   const isWholesaler = useSelector(selectIsWholesaler);
+  const isAdmin = useSelector(selectIsAdmin);
 
   const totalItemsCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
 
@@ -140,6 +141,17 @@ const Navbar = () => {
             {/* User status & Authentication */}
             {user ? (
               <div className="flex items-center gap-2 sm:gap-3">
+                {isAdmin && (
+                  <Link
+                    to="/admin"
+                    className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-3 py-1.5 text-xs font-extrabold text-white shadow-md hover:shadow-orange-500/25 hover:from-amber-600 hover:to-orange-700 transition-all"
+                    title="Open Admin Control Panel"
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    <span className="hidden sm:inline">Admin Panel</span>
+                  </Link>
+                )}
+
                 <Link
                   to="/account"
                   className="flex items-center gap-2 rounded-xl border border-slate-200 dark:border-slate-800 bg-white/70 dark:bg-slate-900/70 px-3 py-1.5 hover:border-orange-400 dark:hover:border-orange-500 transition-all group"
@@ -153,7 +165,7 @@ const Navbar = () => {
                       {user.name?.split(' ')[0]}
                     </span>
                     <span className="text-[9px] font-semibold text-slate-400">
-                      {isWholesaler ? 'Wholesaler' : 'Customer'}
+                      {isAdmin ? 'Administrator' : isWholesaler ? 'Wholesaler' : 'Customer'}
                     </span>
                   </div>
                 </Link>
@@ -193,6 +205,12 @@ const Navbar = () => {
             <Link to="/wholesale" className="text-xs font-bold text-slate-600 dark:text-slate-400 hover:text-orange-500 transition-colors">
               {t('navWholesale')}
             </Link>
+            {isAdmin && (
+              <Link to="/admin" className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1">
+                <ShieldCheck className="h-3.5 w-3.5" />
+                <span>Admin</span>
+              </Link>
+            )}
             {user ? (
               <Link to="/account" className="text-xs font-bold text-orange-600 dark:text-orange-400 hover:underline">
                 {t('myAccountTitle')}

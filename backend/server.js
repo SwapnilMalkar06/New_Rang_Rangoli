@@ -6,7 +6,9 @@ const productRoutes = require('./routes/productRoutes');
 const authRoutes = require('./routes/authRoutes');
 const orderRoutes = require('./routes/orderRoutes');
 const paymentRoutes = require('./routes/paymentRoutes');
+const adminRoutes = require('./routes/adminRoutes');
 const Product = require('./models/Product');
+const User = require('./models/User');
 
 const app = express();
 
@@ -19,6 +21,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/orders', orderRoutes);
 app.use('/api/payment', paymentRoutes);
+app.use('/api/admin', adminRoutes);
 
 // Root route
 app.get('/', (req, res) => {
@@ -325,12 +328,33 @@ const seedProducts = async () => {
   }
 };
 
+const seedAdmin = async () => {
+  try {
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists) {
+      console.log('Seeding default administrator account...');
+      const admin = new User({
+        name: 'Store Administrator',
+        email: 'admin@newrangrangoli.com',
+        password: 'admin123',
+        phone: '9876543210',
+        role: 'admin'
+      });
+      await admin.save();
+      console.log('Admin account created successfully: admin@newrangrangoli.com / admin123');
+    }
+  } catch (error) {
+    console.error(`Error seeding admin: ${error.message}`);
+  }
+};
+
 // Connect DB & Start Server
 const PORT = process.env.PORT || 5000;
 
 if (require.main === module) {
   connectDB().then(() => {
     seedProducts();
+    seedAdmin();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
     });
@@ -339,3 +363,4 @@ if (require.main === module) {
 
 module.exports = app;
 module.exports.seedProducts = seedProducts;
+module.exports.seedAdmin = seedAdmin;

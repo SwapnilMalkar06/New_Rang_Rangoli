@@ -32,6 +32,13 @@ A full-stack modern cultural e-commerce platform crafted for authentic Indian Ra
 7. **Bilingual Marathi (मराठी) & English UI**:
    - Instant language switching across navigation, product descriptions, catalog tags, cart, and checkout.
 
+8. **Comprehensive Store Admin Control Suite (`/admin`)**:
+   - **Dashboard & Analytics**: Real-time KPI cards for gross sales, confirmed revenue, order fulfillment distribution, active catalog count, customer & wholesale retailer counts, and low-inventory warnings.
+   - **Live Order Management**: Search, filter by fulfillment (`Processing`, `Shipped`, `Delivered`, `Ready-for-Pickup`) & payment (`Paid`, `Pending`, `Failed`), inspect items and address, and instantly update order states.
+   - **Catalog & Inventory Control**: Search products, filter by category and stock level, atomic inline `+/- 10` stock adjustments, bilingual add/edit product modal (English & Marathi), and delete controls.
+   - **User & B2B Wholesaler Management**: Search and inspect accounts, GSTIN verification, and instant role promotion (`customer`, `retailer`, `admin`).
+   - **Default Admin Account**: `admin@newrangrangoli.com` / `admin123` (or 1-click Demo Admin button on login).
+
 ---
 
 ## 🛠️ Tech Stack

@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { selectUser, selectToken, logout } from '../store/authSlice';
-import { User, Package, LogOut, ShoppingBag, Calendar, MapPin, CheckCircle, Clock, Truck, ChevronRight } from 'lucide-react';
+import { User, Package, LogOut, ShoppingBag, Calendar, MapPin, CheckCircle, Clock, Truck, ChevronRight, ShieldCheck } from 'lucide-react';
 
 const CustomerAccountPage = () => {
   const { t, language } = useLanguage();
@@ -89,6 +89,15 @@ const CustomerAccountPage = () => {
             </div>
 
             <div className="flex items-center gap-3">
+              {user.role === 'admin' && (
+                <Link
+                  to="/admin"
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 px-4 py-2 text-xs font-bold text-white shadow-md transition-all"
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Admin Panel</span>
+                </Link>
+              )}
               <Link
                 to="/shop"
                 className="flex items-center gap-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 px-4 py-2 text-xs font-bold text-white shadow-md transition-all"

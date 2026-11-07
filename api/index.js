@@ -13,6 +13,9 @@ module.exports = async (req, res) => {
       if (count < 18 && app.seedProducts) {
         await app.seedProducts();
       }
+      if (app.seedAdmin) {
+        await app.seedAdmin();
+      }
       seeded = true;
     }
   } catch (error) {

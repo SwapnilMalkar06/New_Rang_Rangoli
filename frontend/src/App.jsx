@@ -11,6 +11,8 @@ import WholesalePage from './pages/WholesalePage';
 import OrderSuccessPage from './pages/OrderSuccessPage';
 import CustomerAuthPage from './pages/CustomerAuthPage';
 import CustomerAccountPage from './pages/CustomerAccountPage';
+import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import AdminRoute from './components/AdminRoute';
 import RangoliColorCatalog from './components/RangoliColorCatalog';
 
 const TitleUpdater = () => {
@@ -23,6 +25,9 @@ const TitleUpdater = () => {
     switch (location.pathname) {
       case '/':
         document.title = 'New Rang Rangoli | Premium Indian Colors & Art Tools';
+        break;
+      case '/admin':
+        document.title = 'Admin Control Center | New Rang Rangoli';
         break;
       case '/shop':
         if (category) {
@@ -84,6 +89,14 @@ const App = () => {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/wholesale" element={<WholesalePage />} />
             <Route path="/order-success/:id" element={<OrderSuccessPage />} />
+            <Route
+              path="/admin"
+              element={
+                <AdminRoute>
+                  <AdminDashboardPage />
+                </AdminRoute>
+              }
+            />
           </Routes>
         </main>
         <Footer />
