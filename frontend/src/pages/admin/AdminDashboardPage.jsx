@@ -290,6 +290,35 @@ const AdminDashboardPage = () => {
     }
   };
 
+  // Delete Color Shade / Sanskar Bharati Powder
+  const handleDeleteColor = async (color) => {
+    const isSanskar = color.colorType === 'sanskar_bharati';
+    const label = isSanskar ? 'Sanskar Bharati Powder' : 'Rangoli Color Shade';
+    if (!window.confirm(`Are you sure you want to delete ${label} "${color.nameEn}"? This will remove it from the live catalog.`)) {
+      return;
+    }
+
+    try {
+      const res = await fetch(`/api/colors/${color.id || color._id}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast(`${label} "${color.nameEn}" deleted successfully!`);
+        if (isSanskar) {
+          setSanskarColors(prev => prev.filter(c => c.id !== color.id && c._id !== color._id));
+        } else {
+          setRangoliColors(prev => prev.filter(c => c.id !== color.id && c._id !== color._id));
+        }
+      } else {
+        alert(data.message || 'Failed to delete color shade');
+      }
+    } catch (err) {
+      alert(err.message || 'Error deleting color shade');
+    }
+  };
+
   // Delete Product
   const handleDeleteProduct = async (product) => {
     if (!window.confirm(`Are you sure you want to delete "${product.name}"?`)) return;
@@ -1013,6 +1042,18 @@ const AdminDashboardPage = () => {
                     <button
                       type="button"
                       onClick={() => {
+                        setColorToEdit(null); // Add mode
+                        setColorModalOpen(true);
+                      }}
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 text-xs font-bold shadow-md transition-all cursor-pointer"
+                    >
+                      <Plus className="h-4 w-4" />
+                      <span>{catalogSection === 'rangoli' ? '+ Add Rangoli Shade' : '+ Add Sanskar Powder'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
                         setColorForPriceEdit(null); // Batch mode
                         setPriceModalOpen(true);
                       }}
@@ -1164,7 +1205,7 @@ const AdminDashboardPage = () => {
                                         title="Adjust packet weights and prices for this shade"
                                       >
                                         <DollarSign className="h-3.5 w-3.5" />
-                                        <span>Adjust Price</span>
+                                        <span>Price</span>
                                       </button>
 
                                       <button
@@ -1173,11 +1214,20 @@ const AdminDashboardPage = () => {
                                           setColorToEdit(c);
                                           setColorModalOpen(true);
                                         }}
-                                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                                        className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-amber-500 hover:from-orange-600 hover:to-amber-600 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
                                         title="Edit shade details, swatch, photos and packet sizes"
                                       >
                                         <Edit3 className="h-3.5 w-3.5" />
-                                        <span>Edit Shade</span>
+                                        <span>Edit</span>
+                                      </button>
+
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteColor(c)}
+                                        className="p-1.5 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 dark:bg-rose-950/40 text-rose-600 hover:bg-rose-600 hover:text-white dark:text-rose-400 dark:hover:bg-rose-600 dark:hover:text-white transition-all cursor-pointer"
+                                        title={`Delete ${c.nameEn}`}
+                                      >
+                                        <Trash2 className="h-3.5 w-3.5" />
                                       </button>
                                     </div>
                                   </td>
@@ -1490,7 +1540,7 @@ const AdminDashboardPage = () => {
         }}
       />
 
-      {/* Rangoli Color Shade & Packet Sizes Modal */}
+      {/* Rangoli Color Shade & Packet Sizes Modal (Add & Edit) */}
       <RangoliColorModal
         isOpen={colorModalOpen}
         onClose={() => {
@@ -1498,9 +1548,14 @@ const AdminDashboardPage = () => {
           setColorToEdit(null);
         }}
         colorToEdit={colorToEdit}
+        defaultColorType={catalogSection === 'sanskar' ? 'sanskar_bharati' : 'rangoli'}
         token={token}
-        onSaved={(updatedColor) => {
-          showToast(`Color shade "${updatedColor.nameEn}" & packet sizes saved!`);
+        onSaved={(savedColor) => {
+          showToast(
+            colorToEdit
+              ? `Color shade "${savedColor?.nameEn || 'Shade'}" updated successfully!`
+              : `New color "${savedColor?.nameEn || 'Shade'}" added to catalog!`
+          );
           fetchColors();
         }}
       />

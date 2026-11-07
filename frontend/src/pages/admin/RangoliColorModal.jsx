@@ -1,17 +1,34 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Plus, Sparkles, Check, AlertCircle, Upload, Link as LinkIcon, Trash2, Camera, Palette } from 'lucide-react';
+import {
+  X,
+  Plus,
+  Sparkles,
+  Check,
+  AlertCircle,
+  Upload,
+  Link as LinkIcon,
+  Trash2,
+  Camera,
+  Palette,
+  Layers
+} from 'lucide-react';
 
-const CATEGORIES = [
+const RANGOLI_CATEGORIES = [
   'Standard',
   'Fluorescent',
   'White Powder',
+  'Special Festive'
+];
+
+const SANSKAR_CATEGORIES = [
   'Vibrant Warm',
+  'Deep Royal',
   'Cool Pastel',
   'Soft Pastel',
+  'Rich Tone',
+  'Neon Glow',
   'Festive Vibrant',
-  'Deep Traditional',
-  'Nature Rich',
-  'Signature White'
+  'Foundation Essential'
 ];
 
 /**
@@ -48,16 +65,25 @@ const compressImageFile = (file, maxWidth = 900, quality = 0.85) => {
   });
 };
 
-const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => {
+const RangoliColorModal = ({
+  isOpen,
+  onClose,
+  colorToEdit,
+  defaultColorType = 'rangoli', // 'rangoli' or 'sanskar_bharati'
+  onSaved,
+  token
+}) => {
   const fileInputRef = useRef(null);
+  const isEdit = Boolean(colorToEdit);
 
   const [formData, setFormData] = useState({
+    colorType: defaultColorType,
     number: '',
     nameEn: '',
     nameMr: '',
     shadeName: '',
-    category: 'Standard',
-    hex: '#FF0000',
+    category: defaultColorType === 'sanskar_bharati' ? 'Vibrant Warm' : 'Standard',
+    hex: '#FF5722',
     image: '',
     descriptionEn: '',
     descriptionMr: '',
@@ -76,7 +102,6 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
   const [newWeightWholesale, setNewWeightWholesale] = useState('');
 
   const [imageInputMode, setImageInputMode] = useState('file'); // 'file' or 'url'
-  const [urlInput, setUrlInput] = useState('');
   const [uploadingImage, setUploadingImage] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -84,12 +109,13 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
   useEffect(() => {
     if (colorToEdit) {
       setFormData({
+        colorType: colorToEdit.colorType || defaultColorType,
         number: colorToEdit.number || '',
         nameEn: colorToEdit.nameEn || '',
         nameMr: colorToEdit.nameMr || '',
         shadeName: colorToEdit.shadeName || '',
-        category: colorToEdit.category || 'Standard',
-        hex: colorToEdit.hex || '#FF0000',
+        category: colorToEdit.category || (colorToEdit.colorType === 'sanskar_bharati' ? 'Vibrant Warm' : 'Standard'),
+        hex: colorToEdit.hex || '#FF5722',
         image: colorToEdit.image || '',
         descriptionEn: colorToEdit.descriptionEn || '',
         descriptionMr: colorToEdit.descriptionMr || '',
@@ -112,15 +138,54 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
           { key: '1000gm', label: '1000gm', retailPrice: 110, wholesalePrice: 60 }
         ]);
       }
+    } else {
+      // New color creation
+      const isSanskar = defaultColorType === 'sanskar_bharati';
+      setFormData({
+        colorType: defaultColorType,
+        number: '',
+        nameEn: '',
+        nameMr: '',
+        shadeName: '',
+        category: isSanskar ? 'Vibrant Warm' : 'Standard',
+        hex: '#FF5722',
+        image: '',
+        descriptionEn: '',
+        descriptionMr: '',
+        textureDetails: ''
+      });
+
+      setPacketSizes(
+        isSanskar
+          ? [
+              { key: '250gm', label: '250gm', retailPrice: 40, wholesalePrice: 25 },
+              { key: '500gm', label: '500gm', retailPrice: 75, wholesalePrice: 45 },
+              { key: '1000gm', label: '1000gm', retailPrice: 140, wholesalePrice: 80 }
+            ]
+          : [
+              { key: '250gm', label: '250gm', retailPrice: 35, wholesalePrice: 20 },
+              { key: '500gm', label: '500gm', retailPrice: 60, wholesalePrice: 35 },
+              { key: '1000gm', label: '1000gm', retailPrice: 110, wholesalePrice: 60 }
+            ]
+      );
     }
     setError(null);
-  }, [colorToEdit, isOpen]);
+  }, [colorToEdit, defaultColorType, isOpen]);
 
-  if (!isOpen || !colorToEdit) return null;
+  if (!isOpen) return null;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    if (name === 'colorType') {
+      const isSanskar = value === 'sanskar_bharati';
+      setFormData(prev => ({
+        ...prev,
+        colorType: value,
+        category: isSanskar ? 'Vibrant Warm' : 'Standard'
+      }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
+    }
   };
 
   // Packet size price adjustments
@@ -159,8 +224,8 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
       {
         key: cleanKey,
         label: cleanKey,
-        retailPrice: Number(newWeightRetail) || 30,
-        wholesalePrice: Number(newWeightWholesale) || 15
+        retailPrice: Number(newWeightRetail) || 35,
+        wholesalePrice: Number(newWeightWholesale) || 20
       }
     ]);
 
@@ -196,6 +261,11 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
     e.preventDefault();
     setError(null);
 
+    if (!formData.nameEn.trim()) {
+      setError('English Name is required (e.g. 2. YELLOW)');
+      return;
+    }
+
     if (packetSizes.length === 0) {
       setError('At least one packet size / weight variant is required.');
       return;
@@ -206,13 +276,14 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
     packetSizes.forEach(item => {
       weightsDict[item.key] = {
         label: item.label || item.key,
-        retailPrice: Number(item.retailPrice),
-        wholesalePrice: Number(item.wholesalePrice)
+        retailPrice: Number(item.retailPrice) || 0,
+        wholesalePrice: Number(item.wholesalePrice) || 0
       };
     });
 
     const payload = {
-      number: formData.number.trim(),
+      colorType: formData.colorType,
+      number: formData.number.trim() || '1',
       nameEn: formData.nameEn.trim(),
       nameMr: formData.nameMr.trim(),
       shadeName: formData.shadeName.trim() || formData.nameEn.trim(),
@@ -227,8 +298,13 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
 
     try {
       setSaving(true);
-      const res = await fetch(`/api/colors/${colorToEdit.id || colorToEdit._id}`, {
-        method: 'PUT',
+      const url = isEdit
+        ? `/api/colors/${colorToEdit.id || colorToEdit._id}`
+        : '/api/colors';
+      const method = isEdit ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
@@ -238,41 +314,44 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
 
       const data = await res.json();
       if (!res.ok || !data.success) {
-        throw new Error(data.message || 'Failed to update color shade');
+        throw new Error(data.message || `Failed to ${isEdit ? 'update' : 'create'} color shade`);
       }
 
       onSaved(data.data);
       onClose();
     } catch (err) {
-      setError(err.message || 'Error updating color shade');
+      setError(err.message || 'Error processing color shade');
     } finally {
       setSaving(false);
     }
   };
 
+  const activeCategories = formData.colorType === 'sanskar_bharati' ? SANSKAR_CATEGORIES : RANGOLI_CATEGORIES;
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
-      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto text-left">
+      <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto text-left animate-fade-in">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-950/75">
           <div className="flex items-center gap-3">
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl shadow-md border border-white/40"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl shadow-md border-2 border-white/80 dark:border-slate-800"
               style={{ backgroundColor: formData.hex }}
             >
               <Palette className="h-5 w-5 text-white drop-shadow-md" />
             </div>
             <div>
               <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-outfit">
-                Edit Color Shade & Packet Sizes
+                {isEdit ? `Edit Shade: ${colorToEdit.nameEn}` : `Add New ${formData.colorType === 'sanskar_bharati' ? 'Sanskar Bharati Powder' : 'Rangoli Color Shade'}`}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {colorToEdit.nameEn} • {colorToEdit.category}
+                {isEdit ? `${colorToEdit.nameMr || colorToEdit.category} • Configured Packet Sizes & Pricing` : 'Fill in color attributes, swatch, and packet sizes'}
               </p>
             </div>
           </div>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
@@ -289,6 +368,54 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
             </div>
           )}
 
+          {/* Color Type Selector (Only in Add Mode) */}
+          {!isEdit && (
+            <div className="p-3.5 rounded-2xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/80 dark:border-orange-900/60">
+              <label className="block text-xs font-bold text-orange-900 dark:text-orange-200 uppercase tracking-wider mb-2">
+                Color Collection Type *
+              </label>
+              <div className="grid grid-cols-2 gap-3">
+                <label className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                  formData.colorType === 'rangoli'
+                    ? 'border-orange-500 bg-white dark:bg-slate-900 shadow-sm text-orange-600 font-bold'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="colorType"
+                    value="rangoli"
+                    checked={formData.colorType === 'rangoli'}
+                    onChange={handleChange}
+                    className="accent-orange-500"
+                  />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">🌸 Rangoli Color Shade</p>
+                    <p className="text-[10px] text-slate-400">Standard / Fluorescent</p>
+                  </div>
+                </label>
+
+                <label className={`flex items-center gap-2.5 p-3 rounded-xl border cursor-pointer transition-all ${
+                  formData.colorType === 'sanskar_bharati'
+                    ? 'border-rose-500 bg-white dark:bg-slate-900 shadow-sm text-rose-600 font-bold'
+                    : 'border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400'
+                }`}>
+                  <input
+                    type="radio"
+                    name="colorType"
+                    value="sanskar_bharati"
+                    checked={formData.colorType === 'sanskar_bharati'}
+                    onChange={handleChange}
+                    className="accent-rose-500"
+                  />
+                  <div>
+                    <p className="text-xs font-bold text-slate-900 dark:text-white">🌀 Sanskar Bharati Powder</p>
+                    <p className="text-[10px] text-slate-400">Super-fine textured powder</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+          )}
+
           {/* Basic Shade Identifiers */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <div>
@@ -301,8 +428,8 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 required
                 value={formData.number}
                 onChange={handleChange}
-                placeholder="e.g. 2"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white"
+                placeholder="e.g. 24"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
               />
             </div>
             <div className="sm:col-span-2">
@@ -315,8 +442,8 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 required
                 value={formData.nameEn}
                 onChange={handleChange}
-                placeholder="e.g. 2. YELLOW"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white"
+                placeholder="e.g. 24. EMERALD GREEN"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
               />
             </div>
           </div>
@@ -331,8 +458,8 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 name="nameMr"
                 value={formData.nameMr}
                 onChange={handleChange}
-                placeholder="उदा. २. पिवळा (Yellow)"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white"
+                placeholder="उदा. २४. पाचू हिरवा"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
               />
             </div>
             <div>
@@ -344,8 +471,8 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 name="shadeName"
                 value={formData.shadeName}
                 onChange={handleChange}
-                placeholder="e.g. Yellow"
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white"
+                placeholder="e.g. Emerald Green"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
               />
             </div>
           </div>
@@ -360,9 +487,9 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white cursor-pointer"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-bold text-slate-900 dark:text-white cursor-pointer focus:outline-hidden focus:border-orange-500"
               >
-                {CATEGORIES.map(cat => (
+                {activeCategories.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
                 ))}
               </select>
@@ -385,16 +512,14 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                   name="hex"
                   value={formData.hex}
                   onChange={handleChange}
-                  placeholder="#F2C80C"
-                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-white"
+                  placeholder="#FF5722"
+                  className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
                 />
               </div>
             </div>
           </div>
 
-          {/* ======================================================== */}
-          {/* PACKET SIZES & WEIGHTS PRICING MANAGER                   */}
-          {/* ======================================================== */}
+          {/* PACKET SIZES & WEIGHTS PRICING MANAGER */}
           <div className="rounded-2xl border-2 border-orange-200 dark:border-orange-900/60 bg-orange-50/40 dark:bg-orange-950/20 p-4">
             <div className="flex items-center justify-between mb-3">
               <div>
@@ -403,7 +528,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                   Packet Sizes & Pricing Configuration
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400">
-                  Configure retail and wholesale rates for each packet weight variant
+                  Configure retail (ग्राहक) and wholesale (घाऊक) rates for each packet weight variant
                 </p>
               </div>
             </div>
@@ -418,7 +543,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
               </div>
 
               {packetSizes.map((pkt, idx) => (
-                <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-orange-200/80 dark:border-slate-700">
+                <div key={idx} className="grid grid-cols-12 gap-2 items-center bg-white dark:bg-slate-900 p-2.5 rounded-xl border border-orange-200/80 dark:border-slate-700 shadow-2xs">
                   <div className="col-span-4">
                     <input
                       type="text"
@@ -428,6 +553,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                       className="w-full rounded-lg border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800"
                     />
                   </div>
+
                   <div className="col-span-3">
                     <div className="relative">
                       <span className="absolute left-2 top-1 text-xs text-slate-400 font-bold">₹</span>
@@ -458,6 +584,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                       </button>
                     </div>
                   </div>
+
                   <div className="col-span-3">
                     <div className="relative">
                       <span className="absolute left-2 top-1 text-xs text-indigo-400 font-bold">₹</span>
@@ -488,6 +615,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                       </button>
                     </div>
                   </div>
+
                   <div className="col-span-2 text-right">
                     <button
                       type="button"
@@ -618,6 +746,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 rows={2}
                 value={formData.descriptionEn}
                 onChange={handleChange}
+                placeholder="Super-fine rangoli color powder..."
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white"
               />
             </div>
@@ -630,6 +759,7 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
                 rows={2}
                 value={formData.descriptionMr}
                 onChange={handleChange}
+                placeholder="सणांच्या सजावटीसाठी अतिशय बारीक रांगोळी रंग..."
                 className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2 text-xs text-slate-900 dark:text-white"
               />
             </div>
@@ -653,12 +783,12 @@ const RangoliColorModal = ({ isOpen, onClose, colorToEdit, onSaved, token }) => 
               {saving ? (
                 <>
                   <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                  <span>Saving Changes...</span>
+                  <span>Saving...</span>
                 </>
               ) : (
                 <>
                   <Check className="h-4 w-4" />
-                  <span>Save Color & Packet Sizes</span>
+                  <span>{isEdit ? 'Save Changes' : 'Create Color Shade'}</span>
                 </>
               )}
             </button>

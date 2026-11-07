@@ -165,7 +165,7 @@ exports.updateColor = async (req, res) => {
 };
 
 /**
- * @desc    Create a new color shade
+ * @desc    Create a new color shade or Sanskar Bharati powder
  * @route   POST /api/colors
  * @access  Private/Admin
  */
@@ -183,34 +183,55 @@ exports.createColor = async (req, res) => {
       image,
       descriptionEn,
       descriptionMr,
-      weights
+      textureDetails,
+      weights,
+      orderIndex,
+      inStock
     } = req.body;
 
-    const shadeId = id || `color-${Date.now()}`;
+    if (!nameEn || !nameEn.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: 'Color English name is required'
+      });
+    }
+
+    const type = colorType === 'sanskar_bharati' ? 'sanskar_bharati' : 'rangoli';
+    const shadeId = id && id.trim()
+      ? id.trim()
+      : `color-${type === 'sanskar_bharati' ? 'sb' : 'rc'}-${Date.now()}`;
+
+    // Auto-calculate orderIndex if not provided
+    const highestOrder = await RangoliColor.findOne({ colorType: type }).sort({ orderIndex: -1 }).select('orderIndex');
+    const nextOrder = (highestOrder?.orderIndex || 0) + 1;
+
     const newColor = new RangoliColor({
       id: shadeId,
-      colorType: colorType || 'rangoli',
-      number: number || '99',
-      nameEn,
-      nameMr: nameMr || '',
-      shadeName: shadeName || nameEn,
-      category: category || 'Standard',
-      hex: hex || '#FF0000',
-      image: image || '/colors/shade-card.jpg',
-      descriptionEn: descriptionEn || '',
-      descriptionMr: descriptionMr || '',
-      weights: weights || {
+      colorType: type,
+      number: number ? String(number).trim() : String(nextOrder),
+      nameEn: nameEn.trim(),
+      nameMr: nameMr ? nameMr.trim() : '',
+      shadeName: shadeName ? shadeName.trim() : nameEn.trim(),
+      category: category ? category.trim() : (type === 'sanskar_bharati' ? 'Vibrant Warm' : 'Standard'),
+      hex: hex ? hex.trim() : '#FF5722',
+      image: image ? image.trim() : '/colors/shade-card.jpg',
+      descriptionEn: descriptionEn ? descriptionEn.trim() : '',
+      descriptionMr: descriptionMr ? descriptionMr.trim() : '',
+      textureDetails: textureDetails ? textureDetails.trim() : '',
+      weights: weights && Object.keys(weights).length > 0 ? weights : {
         '250gm': { retailPrice: 35, wholesalePrice: 20, label: '250gm' },
         '500gm': { retailPrice: 60, wholesalePrice: 35, label: '500gm' },
         '1000gm': { retailPrice: 110, wholesalePrice: 60, label: '1000gm' }
-      }
+      },
+      orderIndex: orderIndex != null ? Number(orderIndex) : nextOrder,
+      inStock: inStock !== undefined ? Boolean(inStock) : true
     });
 
     const saved = await newColor.save();
 
     res.status(201).json({
       success: true,
-      message: 'New color shade created successfully',
+      message: `New ${type === 'sanskar_bharati' ? 'Sanskar Bharati Powder' : 'Rangoli Color Shade'} created successfully!`,
       data: saved
     });
   } catch (error) {
@@ -223,15 +244,16 @@ exports.createColor = async (req, res) => {
 };
 
 /**
- * @desc    Delete a color shade
+ * @desc    Delete a color shade or powder
  * @route   DELETE /api/colors/:id
  * @access  Private/Admin
  */
 exports.deleteColor = async (req, res) => {
   try {
     const identifier = req.params.id;
+    const isMongoId = identifier && identifier.match(/^[0-9a-fA-F]{24}$/);
     const color = await RangoliColor.findOneAndDelete({
-      $or: [{ id: identifier }, { _id: identifier.match(/^[0-9a-fA-F]{24}$/) ? identifier : null }]
+      $or: [{ id: identifier }, ...(isMongoId ? [{ _id: identifier }] : [])]
     });
 
     if (!color) {
@@ -243,7 +265,8 @@ exports.deleteColor = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Color shade deleted successfully'
+      message: `Color shade "${color.nameEn}" deleted successfully`,
+      data: color
     });
   } catch (error) {
     res.status(500).json({
