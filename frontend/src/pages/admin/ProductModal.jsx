@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { X, Plus, Sparkles, Image, Check, AlertCircle } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Plus, Sparkles, Image, Check, AlertCircle, Upload, Link, Trash2, Camera } from 'lucide-react';
 
 const CATEGORIES = [
   'Rangoli',
@@ -14,8 +14,44 @@ const CATEGORIES = [
   'Seasonal & Event'
 ];
 
+/**
+ * Client-side Canvas Image Compressor
+ * Resizes images to max 1000px and 85% JPEG quality to ensure fast uploads and low DB footprint.
+ */
+const compressImageFile = (file, maxWidth = 1000, quality = 0.85) => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = (event) => {
+      const img = new window.Image();
+      img.src = event.target.result;
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+
+        if (width > maxWidth) {
+          height = Math.round((height * maxWidth) / width);
+          width = maxWidth;
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, width, height);
+
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+        resolve(compressedDataUrl);
+      };
+      img.onerror = (err) => reject(err);
+    };
+    reader.onerror = (err) => reject(err);
+  });
+};
+
 const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
   const isEditing = Boolean(productToEdit && productToEdit._id);
+  const fileInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -28,7 +64,6 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
     wholesalePrice: '',
     minWholesaleQuantity: 20,
     stockQuantity: 100,
-    imageUrlsText: '',
     tagsText: '',
     hasDiscount: false,
     discountPercentage: 10,
@@ -36,6 +71,13 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
     discountEndDate: '',
     discountEventName: ''
   });
+
+  // Images state
+  const [images, setImages] = useState([]);
+  const [imageInputMode, setImageInputMode] = useState('file'); // 'file' or 'url'
+  const [urlInput, setUrlInput] = useState('');
+  const [uploadingFiles, setUploadingFiles] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
 
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
@@ -53,7 +95,6 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
         wholesalePrice: productToEdit.wholesalePrice != null ? productToEdit.wholesalePrice : '',
         minWholesaleQuantity: productToEdit.minWholesaleQuantity != null ? productToEdit.minWholesaleQuantity : 20,
         stockQuantity: productToEdit.stockQuantity != null ? productToEdit.stockQuantity : 0,
-        imageUrlsText: (productToEdit.imageUrls || []).join('\n'),
         tagsText: (productToEdit.tags || []).join(', '),
         hasDiscount: Boolean(productToEdit.seasonalDiscount && productToEdit.seasonalDiscount.discountPercentage),
         discountPercentage: productToEdit.seasonalDiscount?.discountPercentage || 10,
@@ -61,6 +102,7 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
         discountEndDate: productToEdit.seasonalDiscount?.endDate ? new Date(productToEdit.seasonalDiscount.endDate).toISOString().slice(0, 10) : '',
         discountEventName: productToEdit.seasonalDiscount?.eventName || ''
       });
+      setImages(productToEdit.imageUrls || []);
     } else {
       setFormData({
         name: '',
@@ -73,7 +115,6 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
         wholesalePrice: '',
         minWholesaleQuantity: 20,
         stockQuantity: 100,
-        imageUrlsText: 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=600&auto=format&fit=crop',
         tagsText: 'Rangoli, Festive, Organic',
         hasDiscount: false,
         discountPercentage: 10,
@@ -81,7 +122,9 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
         discountEndDate: '',
         discountEventName: ''
       });
+      setImages([]);
     }
+    setUrlInput('');
     setError(null);
   }, [productToEdit, isOpen]);
 
@@ -95,18 +138,81 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
     }));
   };
 
+  // Process selected file(s)
+  const processFiles = async (filesList) => {
+    if (!filesList || filesList.length === 0) return;
+    setError(null);
+    setUploadingFiles(true);
+
+    try {
+      const validFiles = Array.from(filesList).filter(f => f.type.startsWith('image/'));
+      if (validFiles.length === 0) {
+        setError('Please select valid image files (JPG, PNG, WEBP).');
+        setUploadingFiles(false);
+        return;
+      }
+
+      const compressedResults = await Promise.all(
+        validFiles.map(file => compressImageFile(file))
+      );
+
+      setImages(prev => [...prev, ...compressedResults]);
+    } catch (err) {
+      setError('Failed to process image file: ' + err.message);
+    } finally {
+      setUploadingFiles(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    processFiles(e.target.files);
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    processFiles(e.dataTransfer.files);
+  };
+
+  // Add image via URL
+  const handleAddUrlImage = () => {
+    if (!urlInput.trim()) return;
+    setImages(prev => [...prev, urlInput.trim()]);
+    setUrlInput('');
+  };
+
+  // Remove an image from list
+  const handleRemoveImage = (indexToRemove) => {
+    setImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  // Set an image as primary (move to 1st position)
+  const handleSetPrimary = (indexToPrimary) => {
+    setImages(prev => {
+      const selected = prev[indexToPrimary];
+      const remaining = prev.filter((_, idx) => idx !== indexToPrimary);
+      return [selected, ...remaining];
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
 
-    // Parse image URLs
-    const imageUrls = formData.imageUrlsText
-      .split('\n')
-      .map(url => url.trim())
-      .filter(Boolean);
-
-    if (imageUrls.length === 0) {
-      setError('Please provide at least one valid image URL.');
+    if (images.length === 0) {
+      setError('Please choose or upload at least one product image file.');
       return;
     }
 
@@ -128,7 +234,7 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
       wholesalePrice: Number(formData.wholesalePrice),
       minWholesaleQuantity: Number(formData.minWholesaleQuantity),
       stockQuantity: Number(formData.stockQuantity),
-      imageUrls,
+      imageUrls: images,
       tags
     };
 
@@ -177,11 +283,6 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
     }
   };
 
-  const previewImages = formData.imageUrlsText
-    .split('\n')
-    .map(url => url.trim())
-    .filter(Boolean);
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto">
@@ -197,13 +298,13 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
                 {isEditing ? 'Edit Product Item' : 'Add New Product to Catalog'}
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {isEditing ? `Product ID: ${productToEdit._id}` : 'Fill in the bilingual details and inventory parameters.'}
+                {isEditing ? `Product ID: ${productToEdit._id}` : 'Upload product photos from your device and set catalog details.'}
               </p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
           >
             <X className="h-5 w-5" />
           </button>
@@ -259,7 +360,7 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
                 name="mainCategory"
                 value={formData.mainCategory}
                 onChange={handleChange}
-                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
+                className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2 text-xs sm:text-sm text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500 cursor-pointer"
               >
                 {CATEGORIES.map(cat => (
                   <option key={cat} value={cat}>{cat}</option>
@@ -348,27 +449,162 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
             </div>
           </div>
 
-          {/* Image URLs & Preview */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-              Product Image URLs (One URL per line) *
-            </label>
-            <textarea
-              name="imageUrlsText"
-              rows={2}
-              required
-              value={formData.imageUrlsText}
-              onChange={handleChange}
-              placeholder="https://images.unsplash.com/photo-..."
-              className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/60 px-3.5 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
+          {/* ======================================================== */}
+          {/* PRODUCT IMAGE ATTACHMENT SECTION (FILE UPLOAD OR URL)   */}
+          {/* ======================================================== */}
+          <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-950/50 p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div>
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200">
+                  Product Image Photos *
+                </label>
+                <p className="text-[11px] text-slate-500">
+                  Choose image file from your computer or phone (auto-optimized)
+                </p>
+              </div>
+
+              {/* Mode Switcher */}
+              <div className="inline-flex rounded-xl bg-slate-200/70 dark:bg-slate-800 p-0.5 self-start sm:self-auto">
+                <button
+                  type="button"
+                  onClick={() => setImageInputMode('file')}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${imageInputMode === 'file' ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                >
+                  <Upload className="h-3.5 w-3.5" />
+                  <span>Choose File</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImageInputMode('url')}
+                  className={`flex items-center gap-1.5 px-3 py-1 text-xs font-bold rounded-lg transition-all cursor-pointer ${imageInputMode === 'url' ? 'bg-white dark:bg-slate-900 text-orange-600 dark:text-orange-400 shadow-xs' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'}`}
+                >
+                  <Link className="h-3.5 w-3.5" />
+                  <span>Use Web URL</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Hidden Native File Input */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/png, image/jpeg, image/jpg, image/webp"
+              multiple
+              onChange={handleFileInputChange}
+              className="hidden"
             />
-            {previewImages.length > 0 && (
-              <div className="flex items-center gap-2 mt-2 overflow-x-auto py-1">
-                {previewImages.map((img, i) => (
-                  <div key={i} className="relative h-14 w-14 shrink-0 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100">
-                    <img src={img} alt="Preview" className="h-full w-full object-cover" onError={(e) => { e.target.src = 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=200'; }} />
-                  </div>
-                ))}
+
+            {/* Mode 1: File Upload Drag & Drop Area */}
+            {imageInputMode === 'file' && (
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                onClick={() => fileInputRef.current?.click()}
+                className={`flex flex-col items-center justify-center p-6 rounded-2xl border-2 border-dashed transition-all cursor-pointer text-center ${isDragging ? 'border-orange-500 bg-orange-50/50 dark:bg-orange-950/20 scale-[1.01]' : 'border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900/60 hover:border-orange-400 hover:bg-orange-50/20'}`}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-500/10 text-orange-600 dark:text-orange-400 mb-2">
+                  {uploadingFiles ? (
+                    <div className="h-6 w-6 animate-spin rounded-full border-2 border-orange-500 border-t-transparent" />
+                  ) : (
+                    <Camera className="h-6 w-6" />
+                  )}
+                </div>
+                <p className="text-xs sm:text-sm font-bold text-slate-800 dark:text-slate-200">
+                  {uploadingFiles ? 'Processing & optimizing photo...' : 'Click to Browse File or Drag & Drop'}
+                </p>
+                <p className="text-[11px] text-slate-400 mt-0.5">
+                  Supports PNG, JPG, JPEG, WEBP from your device (multiple files allowed)
+                </p>
+                <button
+                  type="button"
+                  className="mt-3 px-4 py-1.5 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-bold shadow-xs transition-colors pointer-events-none"
+                >
+                  Choose Image File
+                </button>
+              </div>
+            )}
+
+            {/* Mode 2: Web URL Input Area */}
+            {imageInputMode === 'url' && (
+              <div className="flex gap-2">
+                <input
+                  type="url"
+                  value={urlInput}
+                  onChange={(e) => setUrlInput(e.target.value)}
+                  placeholder="https://images.unsplash.com/photo-..."
+                  className="flex-1 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-xs font-mono text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddUrlImage}
+                  className="px-4 py-2 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold hover:bg-orange-500 transition-colors cursor-pointer"
+                >
+                  Add URL
+                </button>
+              </div>
+            )}
+
+            {/* Attached Images Gallery & Thumbnail Management */}
+            {images.length > 0 && (
+              <div className="mt-4 pt-3 border-t border-slate-200/80 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    Attached Photos ({images.length})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="text-[11px] font-bold text-orange-500 hover:text-orange-600 flex items-center gap-1 cursor-pointer"
+                  >
+                    <Plus className="h-3 w-3" />
+                    <span>Add Another File</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3">
+                  {images.map((imgSrc, idx) => (
+                    <div
+                      key={idx}
+                      className="group relative h-24 rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 shadow-xs"
+                    >
+                      <img
+                        src={imgSrc}
+                        alt={`Product ${idx + 1}`}
+                        className="h-full w-full object-cover"
+                        onError={(e) => {
+                          e.target.src = 'https://images.unsplash.com/photo-1605810230434-7631ac76ec81?w=200';
+                        }}
+                      />
+
+                      {/* Primary badge for first image */}
+                      {idx === 0 ? (
+                        <span className="absolute top-1.5 left-1.5 px-1.5 py-0.5 rounded-md bg-orange-600 text-[9px] font-black uppercase text-white shadow-xs">
+                          Cover
+                        </span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleSetPrimary(idx)}
+                          className="absolute top-1.5 left-1.5 opacity-0 group-hover:opacity-100 px-1.5 py-0.5 rounded-md bg-slate-900/80 hover:bg-orange-600 text-[9px] font-bold text-white transition-all cursor-pointer"
+                          title="Set as Cover Photo"
+                        >
+                          Make Cover
+                        </button>
+                      )}
+
+                      {/* Remove Button */}
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveImage(idx)}
+                        className="absolute top-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-rose-600 text-white shadow-md hover:bg-rose-700 transition-colors cursor-pointer"
+                        title="Remove Image"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -498,13 +734,13 @@ const ProductModal = ({ isOpen, onClose, onSaved, productToEdit, token }) => {
               type="button"
               onClick={onClose}
               disabled={saving}
-              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"
+              className="px-4 py-2 text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
-              disabled={saving}
+              disabled={saving || uploadingFiles}
               className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-orange-500 to-rose-600 px-5 py-2.5 text-xs font-bold text-white shadow-md hover:from-orange-600 hover:to-rose-700 transition-all disabled:opacity-50 cursor-pointer"
             >
               {saving ? (
