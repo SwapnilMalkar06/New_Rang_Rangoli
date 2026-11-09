@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
+const whatsappService = require('../services/whatsappService');
 
 /**
  * @desc    Create a new order online
@@ -9,7 +10,16 @@ const Product = require('../models/Product');
  */
 exports.createOrder = async (req, res) => {
   try {
-    const { customerName, customerEmail, customerPhone, shippingAddress, items, isWholesale, totalPrice } = req.body;
+    const {
+      customerName,
+      customerEmail,
+      customerPhone,
+      shippingAddress,
+      items,
+      isWholesale,
+      totalPrice,
+      paymentMethod = 'COD'
+    } = req.body;
 
     if (!items || items.length === 0) {
       return res.status(400).json({
@@ -105,9 +115,27 @@ exports.createOrder = async (req, res) => {
       shippingAddress,
       items: validatedItems,
       totalPrice: finalTotal,
-      paymentStatus: 'Pending',
+      paymentStatus: paymentMethod === 'Online' || paymentMethod === 'Razorpay' ? 'Pending' : 'Pending',
+      paymentMethod: paymentMethod || 'COD',
       fulfillmentStatus: 'Processing'
     });
+
+    // Send instant WhatsApp order confirmation to customer
+    try {
+      const waResult = await whatsappService.sendOrderConfirmation(order);
+      if (waResult) {
+        order.whatsappLogs.push({
+          type: 'ORDER_CONFIRMATION',
+          phone: order.customerPhone,
+          message: 'Order confirmation dispatched via WhatsApp',
+          sentAt: new Date(),
+          isSimulated: !!waResult.simulated
+        });
+        await order.save();
+      }
+    } catch (waErr) {
+      console.error('Non-blocking WhatsApp order confirmation error:', waErr.message);
+    }
 
     res.status(201).json({
       success: true,
@@ -238,36 +266,8 @@ exports.getAllOrders = async (req, res) => {
  */
 exports.updateOrderStatus = async (req, res) => {
   try {
-    const { fulfillmentStatus, paymentStatus } = req.body;
-    const updateData = {};
-
-    if (fulfillmentStatus) {
-      const validFulfillment = ['Processing', 'Shipped', 'Delivered', 'Ready-for-Pickup'];
-      if (!validFulfillment.includes(fulfillmentStatus)) {
-        return res.status(400).json({
-          success: false,
-          message: `Invalid fulfillment status. Allowed: ${validFulfillment.join(', ')}`
-        });
-      }
-      updateData.fulfillmentStatus = fulfillmentStatus;
-    }
-
-    if (paymentStatus) {
-      const validPayment = ['Pending', 'Paid', 'Failed'];
-      if (!validPayment.includes(paymentStatus)) {
-        return res.status(400).json({
-          success: false,
-          message: `Invalid payment status. Allowed: ${validPayment.join(', ')}`
-        });
-      }
-      updateData.paymentStatus = paymentStatus;
-    }
-
-    const order = await Order.findByIdAndUpdate(
-      req.params.id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
+    const { fulfillmentStatus, paymentStatus, deliveryOtp, customNote } = req.body;
+    const order = await Order.findById(req.params.id);
 
     if (!order) {
       return res.status(404).json({
@@ -276,15 +276,289 @@ exports.updateOrderStatus = async (req, res) => {
       });
     }
 
+    const validFulfillment = ['Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Ready-for-Pickup', 'Cancelled'];
+    if (fulfillmentStatus && !validFulfillment.includes(fulfillmentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid fulfillment status. Allowed: ${validFulfillment.join(', ')}`
+      });
+    }
+
+    const validPayment = ['Pending', 'Paid', 'Failed'];
+    if (paymentStatus && !validPayment.includes(paymentStatus)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid payment status. Allowed: ${validPayment.join(', ')}`
+      });
+    }
+
+    // MANDATORY OTP VALIDATION TO MARK AS DELIVERED
+    if (fulfillmentStatus === 'Delivered' && order.fulfillmentStatus !== 'Delivered') {
+      const isAlreadyVerified = order.deliveryOtp && order.deliveryOtp.isVerified;
+      const suppliedOtp = (deliveryOtp || req.body.otp) ? String(deliveryOtp || req.body.otp).trim() : null;
+
+      if (!isAlreadyVerified) {
+        if (!suppliedOtp) {
+          return res.status(400).json({
+            success: false,
+            message: 'Delivery OTP is compulsory! The delivery partner must enter the 6-digit OTP sent to the customer’s WhatsApp to confirm delivery.'
+          });
+        }
+
+        if (!order.deliveryOtp || !order.deliveryOtp.code) {
+          return res.status(400).json({
+            success: false,
+            message: 'No Delivery OTP was generated yet. Please generate and send the Delivery OTP to the customer on WhatsApp first.'
+          });
+        }
+
+        if (suppliedOtp !== String(order.deliveryOtp.code).trim()) {
+          order.deliveryOtp.attempts = (order.deliveryOtp.attempts || 0) + 1;
+          await order.save();
+          return res.status(400).json({
+            success: false,
+            message: 'Invalid Delivery OTP! Please enter the exact 6-digit OTP received on the customer’s WhatsApp.'
+          });
+        }
+
+        // OTP Verified successfully!
+        order.deliveryOtp.isVerified = true;
+        order.deliveryOtp.verifiedAt = new Date();
+      }
+    }
+
+    let statusChanged = false;
+    const previousStatus = order.fulfillmentStatus;
+
+    if (fulfillmentStatus && fulfillmentStatus !== order.fulfillmentStatus) {
+      order.fulfillmentStatus = fulfillmentStatus;
+      statusChanged = true;
+    }
+
+    if (paymentStatus) {
+      order.paymentStatus = paymentStatus;
+    }
+
+    // Trigger WhatsApp Notifications according to status transition
+    if (fulfillmentStatus === 'Out for Delivery') {
+      // Auto-generate fresh 6-digit delivery OTP if not already active
+      if (!order.deliveryOtp?.code || order.deliveryOtp?.isVerified) {
+        const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+        order.deliveryOtp = {
+          code: generatedCode,
+          generatedAt: new Date(),
+          isVerified: false,
+          attempts: 0
+        };
+      }
+
+      await order.save();
+
+      try {
+        const otpResult = await whatsappService.sendDeliveryOtp(order, order.deliveryOtp.code);
+        order.whatsappLogs.push({
+          type: 'DELIVERY_OTP',
+          phone: order.customerPhone,
+          message: `Delivery OTP (${order.deliveryOtp.code}) sent via WhatsApp`,
+          sentAt: new Date(),
+          isSimulated: !!otpResult?.simulated
+        });
+      } catch (err) {
+        console.error('Failed to send Delivery OTP via WhatsApp:', err.message);
+      }
+    } else if (statusChanged) {
+      if (fulfillmentStatus === 'Delivered') {
+        try {
+          const delResult = await whatsappService.sendDeliveryConfirmed(order);
+          order.whatsappLogs.push({
+            type: 'DELIVERY_CONFIRMATION',
+            phone: order.customerPhone,
+            message: 'Order delivery confirmed via WhatsApp after OTP verification',
+            sentAt: new Date(),
+            isSimulated: !!delResult?.simulated
+          });
+        } catch (err) {
+          console.error('Failed to send Delivery confirmation WhatsApp:', err.message);
+        }
+      } else {
+        // Shipped, Processing, Ready-for-Pickup, Cancelled
+        try {
+          const statusResult = await whatsappService.sendStatusUpdate(order, fulfillmentStatus, customNote);
+          order.whatsappLogs.push({
+            type: 'STATUS_UPDATE',
+            phone: order.customerPhone,
+            message: `Order status updated from ${previousStatus} to ${fulfillmentStatus}`,
+            sentAt: new Date(),
+            isSimulated: !!statusResult?.simulated
+          });
+        } catch (err) {
+          console.error('Failed to send WhatsApp status update:', err.message);
+        }
+      }
+    }
+
+    await order.save();
+
     res.status(200).json({
       success: true,
       message: 'Order status updated successfully',
       data: order
     });
   } catch (error) {
+    console.error('Error updating order status:', error);
     res.status(500).json({
       success: false,
       message: 'Server error updating order status',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Generate and send/resend Delivery OTP to customer's WhatsApp
+ * @route   POST /api/orders/:id/send-delivery-otp
+ * @access  Private/Admin
+ */
+exports.sendDeliveryOtp = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    if (order.fulfillmentStatus === 'Delivered' && order.deliveryOtp?.isVerified) {
+      return res.status(400).json({
+        success: false,
+        message: 'This order has already been verified and delivered.'
+      });
+    }
+
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    order.deliveryOtp = {
+      code: otpCode,
+      generatedAt: new Date(),
+      isVerified: false,
+      attempts: 0
+    };
+
+    // Promote to 'Out for Delivery' automatically
+    if (order.fulfillmentStatus === 'Processing' || order.fulfillmentStatus === 'Shipped') {
+      order.fulfillmentStatus = 'Out for Delivery';
+    }
+
+    const waResult = await whatsappService.sendDeliveryOtp(order, otpCode);
+
+    order.whatsappLogs.push({
+      type: 'DELIVERY_OTP',
+      phone: order.customerPhone,
+      message: `Delivery OTP (${otpCode}) sent to customer WhatsApp (+${order.customerPhone})`,
+      sentAt: new Date(),
+      isSimulated: !!waResult?.simulated
+    });
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Delivery OTP (${otpCode}) sent to customer WhatsApp (+${order.customerPhone})`,
+      data: order,
+      simulated: !!waResult?.simulated
+    });
+  } catch (error) {
+    console.error('Error sending delivery OTP:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to send delivery OTP',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Verify delivery OTP entered by delivery person / admin to confirm delivery
+ * @route   POST /api/orders/:id/verify-delivery
+ * @access  Private/Admin
+ */
+exports.verifyDeliveryOtp = async (req, res) => {
+  try {
+    const { otp, markPaymentPaid } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery OTP is required to confirm delivery.'
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    if (order.fulfillmentStatus === 'Delivered' && order.deliveryOtp?.isVerified) {
+      return res.status(200).json({
+        success: true,
+        message: 'This order is already delivered and verified with OTP.',
+        data: order
+      });
+    }
+
+    if (!order.deliveryOtp || !order.deliveryOtp.code) {
+      return res.status(400).json({
+        success: false,
+        message: 'No OTP has been sent for this order yet. Please click "Send Delivery OTP" first.'
+      });
+    }
+
+    const cleanInputOtp = String(otp).trim();
+    const cleanOrderOtp = String(order.deliveryOtp.code).trim();
+
+    if (cleanInputOtp !== cleanOrderOtp) {
+      order.deliveryOtp.attempts = (order.deliveryOtp.attempts || 0) + 1;
+      await order.save();
+      return res.status(400).json({
+        success: false,
+        message: 'Incorrect Delivery OTP! Please check the 6-digit code received on the customer’s WhatsApp.'
+      });
+    }
+
+    // Success: Mark verified and delivered
+    order.deliveryOtp.isVerified = true;
+    order.deliveryOtp.verifiedAt = new Date();
+    order.fulfillmentStatus = 'Delivered';
+
+    if (markPaymentPaid || order.paymentMethod === 'COD') {
+      order.paymentStatus = 'Paid';
+    }
+
+    const waResult = await whatsappService.sendDeliveryConfirmed(order);
+
+    order.whatsappLogs.push({
+      type: 'DELIVERY_CONFIRMATION',
+      phone: order.customerPhone,
+      message: 'Delivery confirmed & verified with OTP',
+      sentAt: new Date(),
+      isSimulated: !!waResult?.simulated
+    });
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Delivery successfully verified with OTP and marked as Delivered!',
+      data: order
+    });
+  } catch (error) {
+    console.error('Error verifying delivery OTP:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error verifying delivery',
       error: error.message
     });
   }

@@ -1,23 +1,75 @@
 import React, { useState } from 'react';
-import { X, User, Phone, Mail, MapPin, Package, Check, Truck, CreditCard, Calendar, Printer, AlertCircle, Clock, ShieldCheck } from 'lucide-react';
+import {
+  X,
+  User,
+  Phone,
+  Mail,
+  MapPin,
+  Package,
+  Check,
+  Truck,
+  CreditCard,
+  Calendar,
+  Printer,
+  AlertCircle,
+  Clock,
+  ShieldCheck,
+  Key,
+  Send,
+  MessageSquare,
+  CheckCircle2,
+  RefreshCw
+} from 'lucide-react';
 
-const FULFILLMENT_OPTIONS = ['Processing', 'Shipped', 'Delivered', 'Ready-for-Pickup'];
+const FULFILLMENT_OPTIONS = [
+  'Processing',
+  'Shipped',
+  'Out for Delivery',
+  'Ready-for-Pickup',
+  'Delivered',
+  'Cancelled'
+];
+
 const PAYMENT_OPTIONS = ['Pending', 'Paid', 'Failed'];
+
+const BUSINESS_WHATSAPP_PHONE = '+91 70576 17451';
 
 const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
   if (!isOpen || !order) return null;
 
+  const [currentOrder, setCurrentOrder] = useState(order);
   const [fulfillmentStatus, setFulfillmentStatus] = useState(order.fulfillmentStatus || 'Processing');
   const [paymentStatus, setPaymentStatus] = useState(order.paymentStatus || 'Pending');
   const [updating, setUpdating] = useState(false);
   const [feedback, setFeedback] = useState(null);
+
+  // Delivery OTP states
+  const [deliveryOtpInput, setDeliveryOtpInput] = useState('');
+  const [verifyingOtp, setVerifyingOtp] = useState(false);
+  const [sendingOtp, setSendingOtp] = useState(false);
+  const [otpFeedback, setOtpFeedback] = useState(null);
+  const [markPaymentPaid, setMarkPaymentPaid] = useState(currentOrder.paymentStatus !== 'Paid');
+
+  // Format recipient phone for WhatsApp Web
+  const cleanedPhone = (currentOrder.customerPhone || '').replace(/\D/g, '');
+  const waRecipientNumber = cleanedPhone.length === 10 ? `91${cleanedPhone}` : cleanedPhone;
+  const waChatUrl = `https://wa.me/${waRecipientNumber}?text=${encodeURIComponent(
+    `Namaste ${currentOrder.customerName}, this is regarding your New Rang Rangoli Order #${currentOrder._id.slice(-6).toUpperCase()}. Helpline: ${BUSINESS_WHATSAPP_PHONE}`
+  )}`;
 
   const handleStatusUpdate = async () => {
     try {
       setUpdating(true);
       setFeedback(null);
 
-      const res = await fetch(`/api/orders/${order._id}/status`, {
+      // Check if user is attempting to mark as Delivered without verifying OTP
+      if (fulfillmentStatus === 'Delivered' && !currentOrder.deliveryOtp?.isVerified) {
+        throw new Error(
+          'Customer OTP verification is compulsory! Please enter the 6-digit OTP in the Delivery Verification section below to confirm delivery.'
+        );
+      }
+
+      const res = await fetch(`/api/orders/${currentOrder._id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -31,9 +83,10 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
         throw new Error(data.message || 'Failed to update order status');
       }
 
-      setFeedback({ type: 'success', message: 'Order status successfully updated!' });
+      setCurrentOrder(data.data);
+      setFeedback({ type: 'success', message: 'Order status updated & customer notified on WhatsApp!' });
       onUpdated(data.data);
-      setTimeout(() => setFeedback(null), 3000);
+      setTimeout(() => setFeedback(null), 4000);
     } catch (err) {
       setFeedback({ type: 'error', message: err.message || 'Error updating order' });
     } finally {
@@ -41,14 +94,99 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
     }
   };
 
+  // Send or Resend Delivery OTP via WhatsApp
+  const handleSendDeliveryOtp = async () => {
+    try {
+      setSendingOtp(true);
+      setOtpFeedback(null);
+
+      const res = await fetch(`/api/orders/${currentOrder._id}/send-delivery-otp`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'Failed to send Delivery OTP');
+      }
+
+      setCurrentOrder(data.data);
+      setFulfillmentStatus('Out for Delivery');
+      setOtpFeedback({
+        type: 'success',
+        message: `OTP (${data.data?.deliveryOtp?.code}) sent to customer WhatsApp (+${currentOrder.customerPhone}) via ${BUSINESS_WHATSAPP_PHONE}!`
+      });
+      onUpdated(data.data);
+      setTimeout(() => setOtpFeedback(null), 6000);
+    } catch (err) {
+      setOtpFeedback({ type: 'error', message: err.message || 'Error sending OTP' });
+    } finally {
+      setSendingOtp(false);
+    }
+  };
+
+  // Verify Delivery OTP entered by delivery person
+  const handleVerifyDeliveryOtp = async () => {
+    if (!deliveryOtpInput || deliveryOtpInput.trim().length === 0) {
+      setOtpFeedback({ type: 'error', message: 'Please enter the 6-digit OTP provided by customer.' });
+      return;
+    }
+
+    try {
+      setVerifyingOtp(true);
+      setOtpFeedback(null);
+
+      const res = await fetch(`/api/orders/${currentOrder._id}/verify-delivery`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          otp: deliveryOtpInput.trim(),
+          markPaymentPaid
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.message || 'OTP verification failed');
+      }
+
+      setCurrentOrder(data.data);
+      setFulfillmentStatus('Delivered');
+      if (markPaymentPaid) {
+        setPaymentStatus('Paid');
+      }
+      setDeliveryOtpInput('');
+      setOtpFeedback({
+        type: 'success',
+        message: 'Delivery confirmed & verified! Customer notified on WhatsApp.'
+      });
+      onUpdated(data.data);
+      setTimeout(() => setOtpFeedback(null), 6000);
+    } catch (err) {
+      setOtpFeedback({ type: 'error', message: err.message || 'Verification error' });
+    } finally {
+      setVerifyingOtp(false);
+    }
+  };
+
   const getFulfillmentBadgeClass = (status) => {
     switch (status) {
       case 'Delivered':
         return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+      case 'Out for Delivery':
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800';
       case 'Shipped':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300 dark:border-blue-800';
       case 'Ready-for-Pickup':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800';
+      case 'Cancelled':
+        return 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800';
       case 'Processing':
       default:
         return 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800';
@@ -68,18 +206,17 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
   };
 
   // Calculate items subtotal and delivery charge
-  const itemsSubtotal = (order.items || []).reduce((sum, item) => {
+  const itemsSubtotal = (currentOrder.items || []).reduce((sum, item) => {
     const p = item.priceAtPurchase != null ? item.priceAtPurchase : 0;
     const q = item.quantity != null ? item.quantity : 1;
-    return sum + (p * q);
+    return sum + p * q;
   }, 0);
 
-  const deliveryCharges = Math.max(0, (order.totalPrice || 0) - itemsSubtotal);
+  const deliveryCharges = Math.max(0, (currentOrder.totalPrice || 0) - itemsSubtotal);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs overflow-y-auto">
       <div className="relative w-full max-w-3xl max-h-[92vh] flex flex-col rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl overflow-hidden my-auto text-left">
-        
         {/* Modal Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/75 dark:bg-slate-950/75">
           <div className="flex items-center gap-3">
@@ -89,17 +226,29 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
             <div>
               <div className="flex items-center gap-2">
                 <h3 className="text-base sm:text-lg font-black text-slate-900 dark:text-white font-outfit">
-                  Order #{order._id.slice(-8).toUpperCase()}
+                  Order #{currentOrder._id.slice(-8).toUpperCase()}
                 </h3>
-                <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${getFulfillmentBadgeClass(order.fulfillmentStatus)}`}>
-                  {order.fulfillmentStatus}
+                <span
+                  className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${getFulfillmentBadgeClass(
+                    currentOrder.fulfillmentStatus
+                  )}`}
+                >
+                  {currentOrder.fulfillmentStatus}
                 </span>
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${getPaymentBadgeClass(order.paymentStatus)}`}>
-                  {order.paymentStatus}
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${getPaymentBadgeClass(
+                    currentOrder.paymentStatus
+                  )}`}
+                >
+                  {currentOrder.paymentStatus}
                 </span>
               </div>
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                Placed on {new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                Placed on{' '}
+                {new Date(currentOrder.createdAt).toLocaleString('en-IN', {
+                  dateStyle: 'medium',
+                  timeStyle: 'short'
+                })}
               </p>
             </div>
           </div>
@@ -120,36 +269,40 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
           </div>
         </div>
 
-        {/* FIXED STATUS CONTROL BAR (Never clipped, always visible) */}
+        {/* STATUS CONTROL BAR */}
         <div className="bg-gradient-to-r from-orange-50 via-amber-50 to-orange-50 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 border-b border-orange-200/60 dark:border-slate-800 px-6 py-3.5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-3">
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-0.5">
-                  Fulfillment
+                  Fulfillment Status
                 </span>
                 <select
                   value={fulfillmentStatus}
                   onChange={(e) => setFulfillmentStatus(e.target.value)}
                   className="rounded-xl border border-orange-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-bold text-slate-900 dark:text-white cursor-pointer"
                 >
-                  {FULFILLMENT_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
+                  {FULFILLMENT_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
                   ))}
                 </select>
               </div>
 
               <div>
                 <span className="block text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-0.5">
-                  Payment
+                  Payment Status
                 </span>
                 <select
                   value={paymentStatus}
                   onChange={(e) => setPaymentStatus(e.target.value)}
                   className="rounded-xl border border-orange-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-2.5 py-1 text-xs font-bold text-slate-900 dark:text-white cursor-pointer"
                 >
-                  {PAYMENT_OPTIONS.map(opt => (
-                    <option key={opt} value={opt}>{opt}</option>
+                  {PAYMENT_OPTIONS.map((opt) => (
+                    <option key={opt} value={opt}>
+                      {opt}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -165,21 +318,184 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
               ) : (
                 <Check className="h-3.5 w-3.5" />
               )}
-              <span>Update Order Status</span>
+              <span>Update Status & Notify WhatsApp</span>
             </button>
           </div>
 
           {feedback && (
-            <div className={`mt-2 p-2 rounded-xl text-xs flex items-center gap-1.5 ${feedback.type === 'success' ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300' : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'}`}>
-              <Check className="h-3.5 w-3.5 shrink-0" />
-              <span>{feedback.message}</span>
+            <div
+              className={`mt-2 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                feedback.type === 'success'
+                  ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                  : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+              }`}
+            >
+              {feedback.type === 'success' ? (
+                <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+              ) : (
+                <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+              )}
+              <span className="font-semibold">{feedback.message}</span>
             </div>
           )}
         </div>
 
         {/* Modal Scroll Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
+          {/* COMPULSORY DELIVERY OTP VERIFICATION PANEL */}
+          <div className="rounded-3xl border-2 border-orange-400/80 dark:border-orange-500/80 bg-gradient-to-br from-orange-50/70 via-amber-50/40 to-white dark:from-slate-900 dark:via-orange-950/20 dark:to-slate-900 p-5 shadow-md">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-orange-200 dark:border-slate-800">
+              <div className="flex items-center gap-2.5">
+                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-orange-500 text-white shadow-sm">
+                  <Key className="h-5 w-5" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                    <span>Compulsory WhatsApp Delivery OTP</span>
+                    {currentOrder.deliveryOtp?.isVerified ? (
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-500 text-white text-[10px] font-extrabold uppercase">
+                        Verified
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white text-[10px] font-extrabold uppercase">
+                        Pending Handover
+                      </span>
+                    )}
+                  </h4>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Delivery agent must collect & enter customer OTP to confirm parcel receipt.
+                  </p>
+                </div>
+              </div>
+
+              {/* Direct WhatsApp Action for Shop / Delivery Agent */}
+              <a
+                href={waChatUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer self-start sm:self-auto"
+                title={`Open WhatsApp chat using business helpline ${BUSINESS_WHATSAPP_PHONE}`}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                <span>Chat on WhatsApp</span>
+              </a>
+            </div>
+
+            {currentOrder.deliveryOtp?.isVerified ? (
+              <div className="mt-4 p-4 rounded-2xl bg-emerald-100/80 dark:bg-emerald-950/50 border border-emerald-300 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200 flex items-start gap-3">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
+                <div className="text-xs">
+                  <p className="font-extrabold text-sm text-emerald-800 dark:text-emerald-300">
+                    Parcel Delivered & OTP Verified Successfully!
+                  </p>
+                  <p className="mt-0.5 text-emerald-700 dark:text-emerald-400">
+                    Verified OTP Code: <strong className="font-mono">{currentOrder.deliveryOtp?.code}</strong>
+                    {currentOrder.deliveryOtp?.verifiedAt && (
+                      <span>
+                        {' '}• at {new Date(currentOrder.deliveryOtp.verifiedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-[11px] text-emerald-600 dark:text-emerald-500 mt-1">
+                    Customer received final delivery confirmation on WhatsApp from {BUSINESS_WHATSAPP_PHONE}.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-slate-600 dark:text-slate-300">Active OTP Status:</span>
+                    {currentOrder.deliveryOtp?.code ? (
+                      <span className="px-2.5 py-1 rounded-lg bg-orange-100 dark:bg-orange-950 font-mono font-black text-orange-700 dark:text-orange-300 tracking-wider">
+                        {currentOrder.deliveryOtp.code}
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic">Not generated yet</span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={handleSendDeliveryOtp}
+                    disabled={sendingOtp}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
+                  >
+                    {sendingOtp ? (
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Send className="h-3.5 w-3.5" />
+                    )}
+                    <span>
+                      {currentOrder.deliveryOtp?.code ? 'Resend OTP to Customer WhatsApp' : 'Generate & Send OTP via WhatsApp'}
+                    </span>
+                  </button>
+                </div>
+
+                {/* Delivery Verification Input for Delivery Boy */}
+                <div className="pt-2">
+                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                    Enter 6-Digit OTP provided by Customer at doorstep:
+                  </label>
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                    <input
+                      type="text"
+                      maxLength={6}
+                      placeholder="e.g. 583921"
+                      value={deliveryOtpInput}
+                      onChange={(e) => setDeliveryOtpInput(e.target.value.replace(/\D/g, ''))}
+                      className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-mono font-bold tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-500"
+                    />
+
+                    <button
+                      onClick={handleVerifyDeliveryOtp}
+                      disabled={verifyingOtp || deliveryOtpInput.length < 6}
+                      className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-40 transition-all cursor-pointer"
+                    >
+                      {verifyingOtp ? (
+                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      ) : (
+                        <CheckCircle2 className="h-4 w-4" />
+                      )}
+                      <span>Verify & Confirm Handover</span>
+                    </button>
+                  </div>
+
+                  {currentOrder.paymentStatus !== 'Paid' && (
+                    <div className="mt-2 flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="markPaidCheckbox"
+                        checked={markPaymentPaid}
+                        onChange={(e) => setMarkPaymentPaid(e.target.checked)}
+                        className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                      />
+                      <label htmlFor="markPaidCheckbox" className="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
+                        Collect payment (₹{currentOrder.totalPrice}) and automatically mark payment as <strong>Paid</strong> upon OTP verification
+                      </label>
+                    </div>
+                  )}
+                </div>
+
+                {otpFeedback && (
+                  <div
+                    className={`mt-2 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                      otpFeedback.type === 'success'
+                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                    }`}
+                  >
+                    {otpFeedback.type === 'success' ? (
+                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                    ) : (
+                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                    )}
+                    <span className="font-semibold">{otpFeedback.message}</span>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Customer & Shipping Information Cards */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/50 dark:bg-slate-900">
@@ -187,18 +503,24 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                 <User className="h-3.5 w-3.5 text-orange-500" />
                 Customer Contact Details
               </h5>
-              <p className="text-sm font-black text-slate-900 dark:text-white">{order.customerName}</p>
+              <p className="text-sm font-black text-slate-900 dark:text-white">{currentOrder.customerName}</p>
               <div className="mt-2 space-y-1.5 text-xs text-slate-600 dark:text-slate-300">
                 <p className="flex items-center gap-1.5">
                   <Mail className="h-3.5 w-3.5 text-slate-400" />
-                  <a href={`mailto:${order.customerEmail}`} className="hover:underline text-orange-600 dark:text-orange-400 font-medium">
-                    {order.customerEmail}
+                  <a
+                    href={`mailto:${currentOrder.customerEmail}`}
+                    className="hover:underline text-orange-600 dark:text-orange-400 font-medium"
+                  >
+                    {currentOrder.customerEmail}
                   </a>
                 </p>
                 <p className="flex items-center gap-1.5">
                   <Phone className="h-3.5 w-3.5 text-slate-400" />
-                  <a href={`tel:${order.customerPhone}`} className="hover:underline font-mono font-bold text-slate-800 dark:text-slate-200">
-                    {order.customerPhone}
+                  <a
+                    href={`tel:${currentOrder.customerPhone}`}
+                    className="hover:underline font-mono font-bold text-slate-800 dark:text-slate-200"
+                  >
+                    {currentOrder.customerPhone}
                   </a>
                 </p>
               </div>
@@ -210,18 +532,27 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                 Delivery Destination
               </h5>
               <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed whitespace-pre-wrap font-medium">
-                {order.shippingAddress || 'No address provided'}
+                {currentOrder.shippingAddress || 'No address provided'}
               </p>
               <div className="mt-3 pt-2 border-t border-slate-200 dark:border-slate-800 text-[11px] text-slate-500 flex flex-wrap items-center justify-between gap-1">
                 <span>
-                  Payment: <strong className="text-slate-700 dark:text-slate-300">{order.paymentMethod || 'COD'}</strong>
+                  Payment:{' '}
+                  <strong className="text-slate-700 dark:text-slate-300">
+                    {currentOrder.paymentMethod || 'COD'}
+                  </strong>
                 </span>
-                <span className={`px-2 py-0.5 rounded-md font-bold uppercase text-[9px] ${order.paymentStatus === 'Paid' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'}`}>
-                  {order.paymentStatus === 'Paid' ? 'Paid Online' : 'Pay on Delivery'}
+                <span
+                  className={`px-2 py-0.5 rounded-md font-bold uppercase text-[9px] ${
+                    currentOrder.paymentStatus === 'Paid'
+                      ? 'bg-emerald-100 text-emerald-800'
+                      : 'bg-amber-100 text-amber-800'
+                  }`}
+                >
+                  {currentOrder.paymentStatus === 'Paid' ? 'Paid' : 'Pay on Delivery'}
                 </span>
-                {order.transactionId && (
+                {currentOrder.transactionId && (
                   <span className="w-full font-mono text-[10px] text-slate-400 mt-0.5">
-                    TXN: {order.transactionId}
+                    TXN: {currentOrder.transactionId}
                   </span>
                 )}
               </div>
@@ -233,11 +564,9 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
             <div className="flex items-center justify-between mb-2">
               <h5 className="text-xs font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
                 <Package className="h-3.5 w-3.5 text-amber-500" />
-                Order Line Items ({order.items?.length || 0})
+                Order Line Items ({currentOrder.items?.length || 0})
               </h5>
-              <span className="text-xs font-bold text-slate-500">
-                Items Subtotal: ₹{itemsSubtotal}
-              </span>
+              <span className="text-xs font-bold text-slate-500">Items Subtotal: ₹{itemsSubtotal}</span>
             </div>
 
             <div className="overflow-hidden rounded-2xl border border-slate-200 dark:border-slate-800">
@@ -252,7 +581,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {order.items?.map((item, idx) => {
+                  {currentOrder.items?.map((item, idx) => {
                     const price = item.priceAtPurchase != null ? item.priceAtPurchase : 0;
                     const qty = item.quantity != null ? item.quantity : 1;
                     const lineSubtotal = price * qty;
@@ -265,14 +594,14 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                                 src={item.image || '/colors/shade-card.jpg'}
                                 alt={item.name}
                                 className="h-full w-full object-cover"
-                                onError={(e) => { e.target.src = '/colors/shade-card.jpg'; }}
+                                onError={(e) => {
+                                  e.target.src = '/colors/shade-card.jpg';
+                                }}
                               />
                             </div>
                             <div>
                               <p className="font-bold text-slate-900 dark:text-white">{item.name}</p>
-                              {item.nameMR && (
-                                <p className="text-[10px] text-slate-400">{item.nameMR}</p>
-                              )}
+                              {item.nameMR && <p className="text-[10px] text-slate-400">{item.nameMR}</p>}
                             </div>
                           </div>
                         </td>
@@ -318,19 +647,49 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                       Total Order Amount:
                     </td>
                     <td className="py-3 px-3 text-right text-base text-orange-600 dark:text-orange-400">
-                      ₹{order.totalPrice}
+                      ₹{currentOrder.totalPrice}
                     </td>
                   </tr>
                 </tfoot>
               </table>
             </div>
           </div>
+
+          {/* WhatsApp Notification Logs */}
+          {currentOrder.whatsappLogs && currentOrder.whatsappLogs.length > 0 && (
+            <div className="rounded-2xl border border-slate-200 dark:border-slate-800 p-4 bg-slate-50/40 dark:bg-slate-950/40">
+              <h5 className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2 flex items-center gap-1.5">
+                <MessageSquare className="h-3.5 w-3.5 text-emerald-500" />
+                WhatsApp Message History ({currentOrder.whatsappLogs.length})
+              </h5>
+              <div className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                {currentOrder.whatsappLogs.map((log, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-[11px] p-2 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800"
+                  >
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300 font-bold text-[9px]">
+                        {log.type}
+                      </span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300 line-clamp-1">
+                        {log.message}
+                      </span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 shrink-0">
+                      {new Date(log.sentAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Footer */}
         <div className="flex items-center justify-between px-6 py-3 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-950/50">
           <div className="text-[11px] text-slate-400">
-            Order Reference ID: <span className="font-mono">{order._id}</span>
+            Order Reference ID: <span className="font-mono">{currentOrder._id}</span>
           </div>
           <button
             onClick={onClose}

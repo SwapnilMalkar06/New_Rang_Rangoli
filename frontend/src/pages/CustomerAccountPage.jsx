@@ -162,6 +162,8 @@ const CustomerAccountPage = () => {
                 });
 
                 const isDelivered = order.fulfillmentStatus === 'Delivered';
+                const isOutForDelivery = order.fulfillmentStatus === 'Out for Delivery';
+                const isShipped = order.fulfillmentStatus === 'Shipped';
                 const isProcessing = order.fulfillmentStatus === 'Processing';
 
                 return (
@@ -179,9 +181,13 @@ const CustomerAccountPage = () => {
                             className={`rounded-full px-2.5 py-0.5 text-[10px] font-bold ${
                               isDelivered
                                 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400 border border-emerald-300 dark:border-emerald-800'
+                                : isOutForDelivery
+                                ? 'bg-cyan-100 text-cyan-700 dark:bg-cyan-950/50 dark:text-cyan-400 border border-cyan-300 dark:border-cyan-800 animate-pulse'
+                                : isShipped
+                                ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-300 dark:border-blue-800'
                                 : isProcessing
                                 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-400 border border-amber-300 dark:border-amber-800'
-                                : 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-400 border border-blue-300 dark:border-blue-800'
+                                : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
                             }`}
                           >
                             {order.fulfillmentStatus}
@@ -200,6 +206,29 @@ const CustomerAccountPage = () => {
                         </span>
                       </div>
                     </div>
+
+                    {/* Delivery OTP WhatsApp Notice if Out for Delivery */}
+                    {isOutForDelivery && (
+                      <div className="my-3 p-3 rounded-2xl bg-cyan-50/90 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-cyan-900 dark:text-cyan-200 text-xs flex items-start gap-3">
+                        <span className="text-lg shrink-0 mt-0.5">🚚</span>
+                        <div>
+                          <p className="font-extrabold text-cyan-900 dark:text-cyan-200">
+                            Your package is Out for Delivery Today!
+                          </p>
+                          <p className="text-[11px] text-cyan-800 dark:text-cyan-300 mt-0.5 leading-relaxed">
+                            A 6-digit Delivery Verification OTP was sent to your WhatsApp (<strong>{order.customerPhone}</strong>). Please share this OTP with your delivery partner <strong>ONLY after inspecting and receiving your parcel</strong>.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Verified Delivery Badge */}
+                    {isDelivered && order.deliveryOtp?.isVerified && (
+                      <div className="my-2.5 p-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/60 text-emerald-800 dark:text-emerald-300 text-[11px] flex items-center gap-2">
+                        <CheckCircle className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                        <span>Delivered & verified with your WhatsApp OTP. Thank you for celebrating with us!</span>
+                      </div>
+                    )}
 
                     {/* Order Items list */}
                     <div className="pt-3 space-y-2">
@@ -235,13 +264,24 @@ const CustomerAccountPage = () => {
                       })}
                     </div>
 
-                    {/* Shipping Address note */}
-                    {order.shippingAddress && (
-                      <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex items-center gap-2 text-[11px] text-slate-500">
-                        <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
-                        <span className="line-clamp-1">{order.shippingAddress}</span>
-                      </div>
-                    )}
+                    {/* Shipping Address note & WhatsApp Helpline */}
+                    <div className="mt-3 pt-3 border-t border-slate-100 dark:border-slate-800/60 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-[11px] text-slate-500">
+                      {order.shippingAddress && (
+                        <div className="flex items-center gap-2">
+                          <MapPin className="h-3 w-3 shrink-0 text-slate-400" />
+                          <span className="line-clamp-1">{order.shippingAddress}</span>
+                        </div>
+                      )}
+
+                      <a
+                        href={`https://wa.me/917057617451?text=${encodeURIComponent(`Hello New Rang Rangoli, I have a query about my order #${order._id.slice(-6).toUpperCase()}`)}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-bold hover:underline shrink-0"
+                      >
+                        <span>💬 WhatsApp Helpline (+91 70576 17451)</span>
+                      </a>
+                    </div>
                   </div>
                 );
               })}

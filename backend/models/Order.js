@@ -86,7 +86,7 @@ const OrderSchema = new Schema({
   },
   fulfillmentStatus: {
     type: String,
-    enum: ['Processing', 'Shipped', 'Delivered', 'Ready-for-Pickup'],
+    enum: ['Processing', 'Shipped', 'Out for Delivery', 'Delivered', 'Ready-for-Pickup', 'Cancelled'],
     default: 'Processing',
     index: true
   },
@@ -100,7 +100,49 @@ const OrderSchema = new Schema({
     type: String,
     enum: ['COD', 'Razorpay', 'Online'],
     default: 'COD'
-  }
+  },
+  deliveryOtp: {
+    code: {
+      type: String,
+      default: null
+    },
+    generatedAt: {
+      type: Date,
+      default: null
+    },
+    isVerified: {
+      type: Boolean,
+      default: false
+    },
+    verifiedAt: {
+      type: Date,
+      default: null
+    },
+    attempts: {
+      type: Number,
+      default: 0
+    }
+  },
+  whatsappLogs: [{
+    type: {
+      type: String,
+      default: 'NOTIFICATION'
+    },
+    message: {
+      type: String
+    },
+    phone: {
+      type: String
+    },
+    sentAt: {
+      type: Date,
+      default: Date.now
+    },
+    isSimulated: {
+      type: Boolean,
+      default: false
+    }
+  }]
 }, {
   timestamps: true
 });

@@ -71,6 +71,10 @@ const OrderSuccessPage = () => {
           <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-xs sm:text-sm">
             {t('orderSuccessMessage')}
           </p>
+          <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+            <span>💬</span>
+            <span>WhatsApp order confirmation sent to <strong>{order.customerPhone}</strong> from <strong>+91 70576 17451</strong></span>
+          </div>
         </div>
 
         {/* Order Details Panel */}
@@ -134,6 +138,60 @@ const OrderSuccessPage = () => {
             <span className="text-xl text-orange-500 font-outfit">₹{order.totalPrice.toFixed(2)}</span>
           </div>
         </div>
+
+        {/* 1-Click WhatsApp Instant Actions */}
+        {(() => {
+          const cleanPhone = (order.customerPhone || '').replace(/\D/g, '');
+          const normalizedCustPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+          const itemsListText = (order.items || [])
+            .map((item, idx) => `  ${idx + 1}. *${item.name}* ${item.selectedWeight ? `(${item.selectedWeight})` : ''} × ${item.quantity} = ₹${((item.priceAtPurchase || 0) * item.quantity).toFixed(2)}`)
+            .join('\n');
+          const receiptMsg = `🌸 *NEW RANG RANGOLI - Order Receipt* 🌸\n\nNamaste *${order.customerName}*! 🙏\nThank you for ordering with New Rang Rangoli.\n\n📋 *Order Details:*\n• *Order ID:* #${order._id.slice(-6).toUpperCase()}\n• *Total Amount:* ₹${order.totalPrice.toFixed(2)}\n• *Payment:* ${order.paymentMethod}\n• *Delivery Address:* ${order.shippingAddress}\n\n🛒 *Items Ordered:*\n${itemsListText}\n\n📞 *Business Helpline:* +91 70576 17451`;
+          const custWaUrl = `https://wa.me/${normalizedCustPhone}?text=${encodeURIComponent(receiptMsg)}`;
+          const shopWaUrl = `https://wa.me/917057617451?text=${encodeURIComponent(`New Order Placed!\nOrder #${order._id.slice(-6).toUpperCase()} by ${order.customerName} (${order.customerPhone})\nTotal: ₹${order.totalPrice.toFixed(2)}\n\n${itemsListText}`)}`;
+
+          return (
+            <div className="rounded-2xl border-2 border-emerald-400/80 dark:border-emerald-700 bg-gradient-to-br from-emerald-50 via-teal-50 to-white dark:from-slate-900 dark:via-emerald-950/20 dark:to-slate-900 p-5 text-left shadow-md space-y-3">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-600 text-white shadow-md text-xl">
+                    💬
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>WhatsApp Order Confirmation</span>
+                      <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
+                        Instant
+                      </span>
+                    </h4>
+                    <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
+                      Send or view your itemized invoice directly in WhatsApp on <strong>+{normalizedCustPhone}</strong>.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                  <a
+                    href={custWaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2.5 text-xs shadow-md transition-all cursor-pointer"
+                  >
+                    <span>📲 Open Receipt in WhatsApp</span>
+                  </a>
+                  <a
+                    href={shopWaUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold px-3 py-2.5 text-xs shadow-xs transition-all cursor-pointer"
+                  >
+                    <span>💬 Message Workshop (+91 70576 17451)</span>
+                  </a>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Status Indicators */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center text-xs text-slate-500 dark:text-slate-400">

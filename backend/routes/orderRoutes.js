@@ -5,7 +5,9 @@ const {
   getOrderById,
   getMyOrders,
   getAllOrders,
-  updateOrderStatus
+  updateOrderStatus,
+  sendDeliveryOtp,
+  verifyDeliveryOtp
 } = require('../controllers/orderController');
 const { protect, adminOnly } = require('../middleware/auth');
 
@@ -21,5 +23,11 @@ router.route('/:id')
 
 router.route('/:id/status')
   .put(protect, adminOnly, updateOrderStatus);
+
+router.route('/:id/send-delivery-otp')
+  .post(protect, adminOnly, sendDeliveryOtp);
+
+router.route('/:id/verify-delivery')
+  .post(protect, adminOnly, verifyDeliveryOtp);
 
 module.exports = router;

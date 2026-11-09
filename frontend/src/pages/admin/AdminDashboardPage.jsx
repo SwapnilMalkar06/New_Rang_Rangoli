@@ -374,10 +374,14 @@ const AdminDashboardPage = () => {
     switch (status) {
       case 'Delivered':
         return 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border-emerald-300 dark:border-emerald-800';
+      case 'Out for Delivery':
+        return 'bg-cyan-100 text-cyan-800 dark:bg-cyan-950/60 dark:text-cyan-300 border-cyan-300 dark:border-cyan-800';
       case 'Shipped':
         return 'bg-blue-100 text-blue-800 dark:bg-blue-950/60 dark:text-blue-300 border-blue-300 dark:border-blue-800';
       case 'Ready-for-Pickup':
         return 'bg-purple-100 text-purple-800 dark:bg-purple-950/60 dark:text-purple-300 border-purple-300 dark:border-purple-800';
+      case 'Cancelled':
+        return 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border-rose-300 dark:border-rose-800';
       case 'Processing':
       default:
         return 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300 border-amber-300 dark:border-amber-800';
@@ -602,7 +606,7 @@ const AdminDashboardPage = () => {
                   </button>
                 </div>
 
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
                   <div className="rounded-2xl border border-amber-200 dark:border-amber-900/60 bg-amber-50/50 dark:bg-amber-950/20 p-4">
                     <span className="text-xs font-bold text-amber-800 dark:text-amber-300">Processing</span>
                     <p className="text-2xl font-black text-amber-900 dark:text-amber-200 mt-1">
@@ -613,6 +617,12 @@ const AdminDashboardPage = () => {
                     <span className="text-xs font-bold text-blue-800 dark:text-blue-300">Shipped</span>
                     <p className="text-2xl font-black text-blue-900 dark:text-blue-200 mt-1">
                       {stats?.fulfillmentMap?.Shipped || 0}
+                    </p>
+                  </div>
+                  <div className="rounded-2xl border border-cyan-200 dark:border-cyan-900/60 bg-cyan-50/50 dark:bg-cyan-950/20 p-4">
+                    <span className="text-xs font-bold text-cyan-800 dark:text-cyan-300">Out for Delivery</span>
+                    <p className="text-2xl font-black text-cyan-900 dark:text-cyan-200 mt-1">
+                      {stats?.fulfillmentMap?.['Out for Delivery'] || 0}
                     </p>
                   </div>
                   <div className="rounded-2xl border border-emerald-200 dark:border-emerald-900/60 bg-emerald-50/50 dark:bg-emerald-950/20 p-4">
@@ -852,8 +862,10 @@ const AdminDashboardPage = () => {
                   <option value="All">All Fulfillment</option>
                   <option value="Processing">Processing</option>
                   <option value="Shipped">Shipped</option>
-                  <option value="Delivered">Delivered</option>
+                  <option value="Out for Delivery">Out for Delivery</option>
                   <option value="Ready-for-Pickup">Ready-for-Pickup</option>
+                  <option value="Delivered">Delivered</option>
+                  <option value="Cancelled">Cancelled</option>
                 </select>
 
                 <select

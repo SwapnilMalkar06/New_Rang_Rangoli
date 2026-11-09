@@ -71,8 +71,10 @@ exports.getAdminStats = async (req, res) => {
     const fulfillmentMap = {
       Processing: 0,
       Shipped: 0,
+      'Out for Delivery': 0,
       Delivered: 0,
-      'Ready-for-Pickup': 0
+      'Ready-for-Pickup': 0,
+      Cancelled: 0
     };
     ordersByFulfillment.forEach(item => {
       if (item._id) fulfillmentMap[item._id] = item.count;
