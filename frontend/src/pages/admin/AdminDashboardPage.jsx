@@ -20,6 +20,7 @@ import {
   ExternalLink,
   Edit3,
   Trash2,
+  Check,
   CheckCircle2,
   Clock,
   Truck,
@@ -32,6 +33,91 @@ import {
   Palette,
   Sparkles
 } from 'lucide-react';
+
+// Direct Price Editor for Rangoli & Sanskar Bharati packet sizes
+const ColorWeightPriceEditor = ({ colorId, wKey, wVal, onSave, isUpdating }) => {
+  const [retail, setRetail] = useState(wVal.retailPrice ?? '');
+  const [wholesale, setWholesale] = useState(wVal.wholesalePrice ?? '');
+  const [isChanged, setIsChanged] = useState(false);
+
+  useEffect(() => {
+    setRetail(wVal.retailPrice ?? '');
+    setWholesale(wVal.wholesalePrice ?? '');
+    setIsChanged(false);
+  }, [wVal.retailPrice, wVal.wholesalePrice]);
+
+  const handleSave = () => {
+    onSave(colorId, wKey, retail, wholesale);
+    setIsChanged(false);
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 p-1.5 px-2 rounded-xl bg-orange-50/80 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-xs shadow-2xs">
+      <span className="font-black text-orange-950 dark:text-orange-200 shrink-0 text-[11px]">
+        {wKey}:
+      </span>
+
+      {/* Direct Retail Price Input */}
+      <div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 focus-within:ring-1 focus-within:ring-orange-500 shadow-2xs">
+        <span className="text-[10px] font-bold text-slate-400 mr-0.5">₹</span>
+        <input
+          type="number"
+          min="0"
+          value={retail}
+          onChange={(e) => {
+            setRetail(e.target.value);
+            setIsChanged(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+          }}
+          placeholder="Retail"
+          title="Type retail price directly"
+          className="w-14 text-xs font-black text-slate-900 dark:text-white bg-transparent focus:outline-hidden"
+        />
+      </div>
+
+      {/* Direct Wholesale Price Input */}
+      <div className="flex items-center rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-1.5 py-0.5 focus-within:ring-1 focus-within:ring-indigo-500 shadow-2xs">
+        <span className="text-[9px] font-bold text-indigo-400 mr-0.5">WS:₹</span>
+        <input
+          type="number"
+          min="0"
+          value={wholesale}
+          onChange={(e) => {
+            setWholesale(e.target.value);
+            setIsChanged(true);
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') handleSave();
+          }}
+          placeholder="WS"
+          title="Type wholesale price directly"
+          className="w-12 text-xs font-semibold text-indigo-700 dark:text-indigo-300 bg-transparent focus:outline-hidden"
+        />
+      </div>
+
+      {/* Save Button */}
+      <button
+        type="button"
+        onClick={handleSave}
+        disabled={isUpdating}
+        className={`p-1 rounded-lg text-white font-bold transition-all cursor-pointer shadow-xs ${
+          isChanged
+            ? 'bg-emerald-600 hover:bg-emerald-700 animate-pulse ring-2 ring-emerald-400'
+            : 'bg-orange-500 hover:bg-orange-600'
+        } disabled:opacity-50`}
+        title="Click to save price directly (or press Enter)"
+      >
+        {isUpdating ? (
+          <div className="h-3 w-3 animate-spin rounded-full border border-white border-t-transparent" />
+        ) : (
+          <Check className="h-3.5 w-3.5" />
+        )}
+      </button>
+    </div>
+  );
+};
 
 const AdminDashboardPage = () => {
   const dispatch = useDispatch();
@@ -259,17 +345,25 @@ const AdminDashboardPage = () => {
     }
   };
 
-  // Quick single-packet retail price delta (+ or -)
-  const handleQuickPriceDelta = async (colorId, weightKey, delta) => {
+  // Direct price update for a single-packet weight (Retail and Wholesale)
+  const handleDirectPriceUpdate = async (colorId, weightKey, retailPrice, wholesalePrice) => {
     try {
       setUpdatingPriceKey(`${colorId}-${weightKey}`);
+      const body = { weightKey };
+      if (retailPrice !== undefined && retailPrice !== '') {
+        body.retailPrice = Math.max(0, Number(retailPrice));
+      }
+      if (wholesalePrice !== undefined && wholesalePrice !== '') {
+        body.wholesalePrice = Math.max(0, Number(wholesalePrice));
+      }
+
       const res = await fetch(`/api/colors/${colorId}/price`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${token}`
         },
-        body: JSON.stringify({ weightKey, deltaRetail: delta })
+        body: JSON.stringify(body)
       });
       const data = await res.json();
       if (data.success && data.data) {
@@ -279,12 +373,12 @@ const AdminDashboardPage = () => {
         } else {
           setRangoliColors(prev => prev.map(c => (c.id === updated.id || c._id === updated._id ? updated : c)));
         }
-        showToast(`${updated.nameEn} (${weightKey}) price ${delta > 0 ? '+' : ''}₹${delta}`);
+        showToast(`${updated.nameEn} (${weightKey}) price updated to ₹${body.retailPrice ?? ''}`);
       } else {
-        showToast(data.message || 'Failed to adjust price');
+        showToast(data.message || 'Failed to update price');
       }
     } catch (err) {
-      showToast('Error adjusting price');
+      showToast('Error updating price');
     } finally {
       setUpdatingPriceKey(null);
     }
@@ -1162,47 +1256,16 @@ const AdminDashboardPage = () => {
                                   </td>
                                   <td className="py-3 px-4">
                                     <div className="flex flex-wrap gap-2">
-                                      {weightsEntries.map(([wKey, wVal]) => {
-                                        const isUpdating = updatingPriceKey === `${colorId}-${wKey}`;
-                                        return (
-                                          <div
-                                            key={wKey}
-                                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-orange-50/80 dark:bg-orange-950/40 border border-orange-200/80 dark:border-orange-900/60 text-[11px]"
-                                          >
-                                            <span className="font-black text-orange-900 dark:text-orange-200">
-                                              {wKey}:
-                                            </span>
-                                            <span className="text-slate-900 dark:text-slate-100 font-black">
-                                              ₹{wVal.retailPrice}
-                                            </span>
-                                            <span className="text-indigo-600 dark:text-indigo-400 font-semibold text-[10px]">
-                                              (WS: ₹{wVal.wholesalePrice})
-                                            </span>
-
-                                            {/* Quick Inline Increment/Decrement Stepper */}
-                                            <div className="inline-flex items-center gap-0.5 ml-1 border-l border-orange-200 dark:border-orange-800/80 pl-1">
-                                              <button
-                                                type="button"
-                                                onClick={() => handleQuickPriceDelta(colorId, wKey, -5)}
-                                                disabled={isUpdating}
-                                                className="h-4 w-4 rounded flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-orange-200 dark:hover:bg-orange-900 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer disabled:opacity-40"
-                                                title="Decrease retail price by ₹5"
-                                              >
-                                                -
-                                              </button>
-                                              <button
-                                                type="button"
-                                                onClick={() => handleQuickPriceDelta(colorId, wKey, +5)}
-                                                disabled={isUpdating}
-                                                className="h-4 w-4 rounded flex items-center justify-center bg-white dark:bg-slate-800 hover:bg-orange-200 dark:hover:bg-orange-900 text-[11px] font-black text-slate-700 dark:text-slate-200 shadow-2xs cursor-pointer disabled:opacity-40"
-                                                title="Increase retail price by ₹5"
-                                              >
-                                                +
-                                              </button>
-                                            </div>
-                                          </div>
-                                        );
-                                      })}
+                                      {weightsEntries.map(([wKey, wVal]) => (
+                                        <ColorWeightPriceEditor
+                                          key={wKey}
+                                          colorId={colorId}
+                                          wKey={wKey}
+                                          wVal={wVal}
+                                          onSave={handleDirectPriceUpdate}
+                                          isUpdating={updatingPriceKey === `${colorId}-${wKey}`}
+                                        />
+                                      ))}
                                     </div>
                                   </td>
                                   <td className="py-3 px-4 text-right">

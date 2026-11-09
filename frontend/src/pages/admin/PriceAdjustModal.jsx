@@ -290,29 +290,6 @@ export default function PriceAdjustModal({
                                 className="w-full pl-7 pr-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-slate-900 dark:text-white focus:outline-hidden focus:border-orange-500"
                               />
                             </div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <button
-                                type="button"
-                                onClick={() => handleQuickDelta(idx, 'retailPrice', -5)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                              >
-                                -5
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleQuickDelta(idx, 'retailPrice', +5)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                              >
-                                +5
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleQuickDelta(idx, 'retailPrice', +10)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                              >
-                                +10
-                              </button>
-                            </div>
                           </div>
 
                           {/* Wholesale Price */}
@@ -329,31 +306,9 @@ export default function PriceAdjustModal({
                                 required
                                 value={w.wholesalePrice}
                                 onChange={(e) => handleSingleWeightChange(idx, 'wholesalePrice', e.target.value)}
+                                placeholder="Type wholesale price"
                                 className="w-full pl-7 pr-2 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-black text-indigo-600 dark:text-indigo-400 focus:outline-hidden focus:border-indigo-500"
                               />
-                            </div>
-                            <div className="flex items-center gap-1 mt-1">
-                              <button
-                                type="button"
-                                onClick={() => handleQuickDelta(idx, 'wholesalePrice', -5)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                              >
-                                -5
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleQuickDelta(idx, 'wholesalePrice', +5)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                              >
-                                +5
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleQuickDelta(idx, 'wholesalePrice', +10)}
-                                className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-[10px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                              >
-                                +10
-                              </button>
                             </div>
                           </div>
                         </div>

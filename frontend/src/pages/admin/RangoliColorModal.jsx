@@ -564,30 +564,14 @@ const RangoliColorModal = ({
                         value={pkt.retailPrice}
                         onChange={(e) => handleWeightChange(idx, 'retailPrice', e.target.value)}
                         placeholder="35"
-                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 pl-5 pr-2 py-1 text-xs font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800"
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 pl-5 pr-2 py-1.5 text-xs font-bold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-800"
                       />
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleWeightChange(idx, 'retailPrice', Math.max(0, (Number(pkt.retailPrice) || 0) - 5))}
-                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-[9px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                      >
-                        -5
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleWeightChange(idx, 'retailPrice', (Number(pkt.retailPrice) || 0) + 5)}
-                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-[9px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                      >
-                        +5
-                      </button>
                     </div>
                   </div>
 
                   <div className="col-span-3">
                     <div className="relative">
-                      <span className="absolute left-2 top-1 text-xs text-indigo-400 font-bold">₹</span>
+                      <span className="absolute left-2 top-1.5 text-xs text-indigo-400 font-bold">₹</span>
                       <input
                         type="number"
                         min="0"
@@ -595,24 +579,8 @@ const RangoliColorModal = ({
                         value={pkt.wholesalePrice}
                         onChange={(e) => handleWeightChange(idx, 'wholesalePrice', e.target.value)}
                         placeholder="20"
-                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 pl-5 pr-2 py-1 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-800"
+                        className="w-full rounded-lg border border-slate-200 dark:border-slate-700 pl-5 pr-2 py-1.5 text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-800"
                       />
-                    </div>
-                    <div className="flex items-center gap-1 mt-0.5">
-                      <button
-                        type="button"
-                        onClick={() => handleWeightChange(idx, 'wholesalePrice', Math.max(0, (Number(pkt.wholesalePrice) || 0) - 5))}
-                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-[9px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                      >
-                        -5
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => handleWeightChange(idx, 'wholesalePrice', (Number(pkt.wholesalePrice) || 0) + 5)}
-                        className="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 text-[9px] font-bold text-slate-600 dark:text-slate-300 cursor-pointer"
-                      >
-                        +5
-                      </button>
                     </div>
                   </div>
 
