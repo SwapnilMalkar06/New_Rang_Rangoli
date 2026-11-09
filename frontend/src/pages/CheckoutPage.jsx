@@ -4,7 +4,8 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { selectCartItems, selectCartTotal, clearCart } from '../store/cartSlice';
 import { selectUser, selectIsWholesaler } from '../store/authSlice';
-import { Truck, ShoppingBag, CreditCard, ArrowLeft, Loader2, CheckCircle2, ShieldCheck, Zap } from 'lucide-react';
+import { Truck, ShoppingBag, CreditCard, ArrowLeft, Loader2, CheckCircle2, ShieldCheck, Zap, MapPin } from 'lucide-react';
+import { lookupPincode } from '../utils/pincodeService';
 
 const loadRazorpayScript = () => {
   return new Promise((resolve) => {
@@ -34,10 +35,55 @@ const CheckoutPage = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
+
+  // Structured Address with PIN code auto-fill
+  const [pincode, setPincode] = useState('');
+  const [city, setCity] = useState('');
+  const [stateName, setStateName] = useState('Maharashtra');
+  const [streetAddress, setStreetAddress] = useState('');
+  const [localities, setLocalities] = useState([]);
+  const [selectedLocality, setSelectedLocality] = useState('');
+  const [pincodeLoading, setPincodeLoading] = useState(false);
+  const [pincodeFeedback, setPincodeFeedback] = useState(null);
+
   const [paymentMethod, setPaymentMethod] = useState('Razorpay'); // 'Razorpay' or 'COD'
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
+
+  // Auto-fill City & State on 6-digit PIN code entry
+  const handlePincodeChange = async (val) => {
+    const digits = val.replace(/\D/g, '').slice(0, 6);
+    setPincode(digits);
+
+    if (digits.length === 6) {
+      setPincodeLoading(true);
+      setPincodeFeedback(null);
+      const res = await lookupPincode(digits);
+      setPincodeLoading(false);
+
+      if (res.success) {
+        setCity(res.city || res.district);
+        if (res.state) setStateName(res.state);
+        setLocalities(res.localities || []);
+        if (res.localities && res.localities.length === 1) {
+          setSelectedLocality(res.localities[0]);
+        }
+        setPincodeFeedback({
+          type: 'success',
+          message: `✓ City identified: ${res.city}, ${res.state}`
+        });
+      } else {
+        setPincodeFeedback({
+          type: 'warning',
+          message: res.message || 'Could not auto-detect city. Please type city manually.'
+        });
+      }
+    } else {
+      setPincodeFeedback(null);
+      setLocalities([]);
+      setSelectedLocality('');
+    }
+  };
 
   useEffect(() => {
     if (!user) {
@@ -60,6 +106,21 @@ const CheckoutPage = () => {
     if (cartItems.length === 0) return;
     setCheckoutError('');
 
+    if (!pincode || pincode.length !== 6) {
+      setCheckoutError('Please enter a valid 6-digit postal PIN code.');
+      return;
+    }
+    if (!city.trim()) {
+      setCheckoutError('Please enter your city.');
+      return;
+    }
+    if (!streetAddress.trim()) {
+      setCheckoutError('Please enter your house no., street address, or landmark.');
+      return;
+    }
+
+    const fullShippingAddress = `${streetAddress.trim()}${selectedLocality ? `, ${selectedLocality}` : ''}, ${city.trim()}, ${stateName.trim()} - ${pincode.trim()}`;
+
     try {
       setLoading(true);
       
@@ -67,7 +128,7 @@ const CheckoutPage = () => {
         customerName: name,
         customerEmail: email,
         customerPhone: phone,
-        shippingAddress: address,
+        shippingAddress: fullShippingAddress,
         isWholesale: isWholesaler || false,
         totalPrice: total,
         paymentMethod: paymentMethod,
@@ -315,19 +376,139 @@ const CheckoutPage = () => {
                 </div>
               </div>
 
+              {/* STEP 1: PIN CODE (FIRST) WITH AUTO-CITY DETECTION */}
+              <div className="pt-2 border-t border-slate-100 dark:border-slate-800">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-orange-500" />
+                    <span>Postal PIN Code (पिनकोड) *</span>
+                  </label>
+                  {pincodeLoading && (
+                    <span className="text-[11px] text-orange-600 dark:text-orange-400 flex items-center gap-1 font-semibold animate-pulse">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      Detecting city...
+                    </span>
+                  )}
+                </div>
+
+                <div className="relative">
+                  <input
+                    type="text"
+                    required
+                    maxLength={6}
+                    placeholder="e.g. 416416 or 411038"
+                    value={pincode}
+                    onChange={(e) => handlePincodeChange(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white/70 dark:border-slate-700 dark:bg-slate-950 px-4 py-3 text-sm font-bold tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400 placeholder:font-normal placeholder:tracking-normal focus:border-orange-500 focus:bg-white outline-hidden transition-colors"
+                  />
+                  {pincode.length === 6 && !pincodeLoading && city && (
+                    <div className="absolute right-3.5 top-3.5 text-emerald-600 dark:text-emerald-400">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                  )}
+                </div>
+
+                {pincodeFeedback && (
+                  <div
+                    className={`mt-1.5 text-xs flex items-center gap-1.5 font-bold ${
+                      pincodeFeedback.type === 'success'
+                        ? 'text-emerald-600 dark:text-emerald-400'
+                        : 'text-amber-600 dark:text-amber-400'
+                    }`}
+                  >
+                    <span>{pincodeFeedback.message}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* STEP 2: AUTO-FILLED CITY & STATE */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block mb-2 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    City / District (शहर / जिल्हा) *
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      placeholder="Auto-detected from PIN code"
+                      value={city}
+                      onChange={(e) => setCity(e.target.value)}
+                      className="w-full rounded-xl border border-slate-300 bg-white/70 dark:border-slate-700 dark:bg-slate-950 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:border-orange-500 outline-hidden transition-colors"
+                    />
+                    {city && (
+                      <span className="absolute right-3 top-3 text-[10px] font-extrabold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                        Auto-detected
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-2 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                    State (राज्य) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. Maharashtra"
+                    value={stateName}
+                    onChange={(e) => setStateName(e.target.value)}
+                    className="w-full rounded-xl border border-slate-300 bg-white/70 dark:border-slate-700 dark:bg-slate-950 px-4 py-3 text-sm font-bold text-slate-900 dark:text-white focus:border-orange-500 outline-hidden transition-colors"
+                  />
+                </div>
+              </div>
+
+              {/* Optional Post Office / Locality selector if available */}
+              {localities.length > 1 && (
+                <div>
+                  <label className="block mb-1.5 text-xs font-bold text-slate-600 dark:text-slate-400">
+                    Specific Area / Post Office in {city} (Optional):
+                  </label>
+                  <select
+                    value={selectedLocality}
+                    onChange={(e) => setSelectedLocality(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 px-3.5 py-2.5 text-xs font-semibold text-slate-800 dark:text-slate-200"
+                  >
+                    <option value="">-- Select local area or leave general --</option>
+                    {localities.map((loc) => (
+                      <option key={loc} value={loc}>
+                        {loc}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {/* STEP 3: HOUSE / STREET / LANDMARK DETAILS */}
               <div>
-                <label className="block mb-2 text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
-                  {t('checkoutAddress')}
+                <label className="block mb-2 text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                  Flat No., Building Name, Street & Landmark (सविस्तर पत्ता) *
                 </label>
                 <textarea
                   required
-                  rows="4"
-                  placeholder="Street address, city, state, pincode"
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  className="w-full rounded-xl border border-slate-300 bg-white/50 px-4 py-3 text-sm focus:border-orange-500 focus:bg-white outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:focus:border-orange-400 transition-colors"
+                  rows="2"
+                  placeholder="e.g. Flat 402, Shree Shanti Heights, Near Ganpati Temple, Market Road"
+                  value={streetAddress}
+                  onChange={(e) => setStreetAddress(e.target.value)}
+                  className="w-full rounded-xl border border-slate-300 bg-white/50 px-4 py-3 text-sm text-slate-900 dark:text-white focus:border-orange-500 focus:bg-white outline-hidden dark:border-slate-800 dark:bg-slate-950 dark:focus:border-orange-400 transition-colors"
                 ></textarea>
               </div>
+
+              {/* LIVE COMBINED ADDRESS PREVIEW */}
+              {(pincode || city || streetAddress) && (
+                <div className="p-3.5 rounded-2xl bg-orange-50/70 dark:bg-orange-950/30 border border-orange-200 dark:border-orange-900/50 text-xs">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-orange-900 dark:text-orange-300 block mb-1">
+                    📍 Delivery Address Preview:
+                  </span>
+                  <p className="font-semibold text-slate-800 dark:text-slate-200 leading-relaxed">
+                    {streetAddress ? `${streetAddress}, ` : ''}
+                    {selectedLocality ? `${selectedLocality}, ` : ''}
+                    {city ? `${city}, ` : ''}
+                    {stateName} {pincode ? `- ${pincode}` : ''}
+                  </p>
+                </div>
+              )}
 
               {/* Payment Method Selector */}
               <div>
