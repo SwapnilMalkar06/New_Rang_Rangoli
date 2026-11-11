@@ -400,7 +400,21 @@ exports.updateOrderStatus = async (req, res) => {
         console.error('Failed to send Delivery OTP via WhatsApp:', err.message);
       }
     } else if (statusChanged) {
-      if (fulfillmentStatus === 'Delivered') {
+      if (fulfillmentStatus === 'Shipped') {
+        // AUTOMATIC DISPATCH NOTIFICATION BY DEFAULT
+        try {
+          const dispatchResult = await whatsappWebService.sendDispatchedNotification(order);
+          order.whatsappLogs.push({
+            type: 'PARCEL_DISPATCHED',
+            phone: order.customerPhone,
+            message: 'Parcel dispatched notification sent via WhatsApp',
+            sentAt: new Date(),
+            isSimulated: !!dispatchResult?.simulated
+          });
+        } catch (err) {
+          console.error('Failed to send Dispatched WhatsApp notification:', err.message);
+        }
+      } else if (fulfillmentStatus === 'Delivered') {
         try {
           const delResult = await whatsappWebService.sendDeliveryConfirmed(order);
           order.whatsappLogs.push({
@@ -414,7 +428,7 @@ exports.updateOrderStatus = async (req, res) => {
           console.error('Failed to send Delivery confirmation WhatsApp:', err.message);
         }
       } else {
-        // Shipped, Processing, Ready-for-Pickup, Cancelled
+        // Processing, Ready-for-Pickup, Cancelled
         try {
           const statusResult = await whatsappService.sendStatusUpdate(order, fulfillmentStatus, customNote);
           order.whatsappLogs.push({
@@ -619,6 +633,119 @@ exports.verifyDeliveryOtp = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error verifying delivery',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Doorstep Delivery Verification by Delivery Partner (Public endpoint)
+ * @route   POST /api/orders/:id/delivery-verify
+ * @access  Public (Authorized by Secret 4-Digit OTP)
+ */
+exports.deliveryBoyVerifyOtp = async (req, res) => {
+  try {
+    const { otp, markPaymentPaid = true } = req.body;
+
+    if (!otp) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter the 4-digit Delivery OTP provided by the customer at the doorstep.'
+      });
+    }
+
+    const cleanInputOtp = String(otp).trim();
+    if (!/^\d{4}$/.test(cleanInputOtp)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery OTP must be exactly 4 numeric digits.'
+      });
+    }
+
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    if (order.fulfillmentStatus === 'Delivered' && order.deliveryOtp?.isVerified) {
+      return res.status(200).json({
+        success: true,
+        message: 'This order is already delivered and verified with OTP.',
+        data: order
+      });
+    }
+
+    if (!order.deliveryOtp || !order.deliveryOtp.code) {
+      return res.status(400).json({
+        success: false,
+        message: 'Delivery OTP has not been issued yet. The parcel must be Out for Delivery.'
+      });
+    }
+
+    // Check attempts limit
+    if ((order.deliveryOtp.attempts || 0) >= (order.deliveryOtp.maxAttempts || 5)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum OTP verification attempts (5) reached! Please ask workshop to re-issue OTP.'
+      });
+    }
+
+    // Check expiration window (24 hours)
+    if (order.deliveryOtp.expiresAt && new Date() > new Date(order.deliveryOtp.expiresAt)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This Delivery OTP has expired after 24 hours. Please contact workshop to resend.'
+      });
+    }
+
+    const cleanOrderOtp = String(order.deliveryOtp.code).trim();
+
+    if (cleanInputOtp !== cleanOrderOtp) {
+      order.deliveryOtp.attempts = (order.deliveryOtp.attempts || 0) + 1;
+      await order.save();
+      const remainingAttempts = Math.max(0, (order.deliveryOtp.maxAttempts || 5) - order.deliveryOtp.attempts);
+      return res.status(400).json({
+        success: false,
+        message: `Incorrect 4-Digit Delivery OTP! ${remainingAttempts} attempt(s) remaining.`
+      });
+    }
+
+    // Success: Delivery Partner verified the OTP at doorstep!
+    order.deliveryOtp.isVerified = true;
+    order.deliveryOtp.verifiedAt = new Date();
+    order.fulfillmentStatus = 'Delivered';
+
+    // Mark COD or requested payment as Paid
+    if (markPaymentPaid || order.paymentMethod === 'COD') {
+      order.paymentStatus = 'Paid';
+    }
+
+    // Notify customer on WhatsApp AND send instant alert to Admin Kishor Jamdade
+    const waResult = await whatsappWebService.sendDeliveryConfirmed(order);
+
+    order.whatsappLogs.push({
+      type: 'DELIVERY_BOY_VERIFIED',
+      phone: order.customerPhone,
+      message: 'Delivery partner verified 4-digit OTP at doorstep. Admin Kishor Jamdade notified.',
+      sentAt: new Date(),
+      isSimulated: !!waResult?.simulated
+    });
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: 'Doorstep Delivery verified successfully! Order marked as Delivered and payment confirmed.',
+      data: order
+    });
+  } catch (error) {
+    console.error('Error verifying delivery by delivery partner:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error during doorstep delivery verification',
       error: error.message
     });
   }

@@ -18,7 +18,10 @@ import {
   Send,
   MessageSquare,
   CheckCircle2,
-  RefreshCw
+  RefreshCw,
+  Copy,
+  ExternalLink,
+  Link2
 } from 'lucide-react';
 
 const FULFILLMENT_OPTIONS = [
@@ -50,6 +53,23 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
   const [sendingOtp, setSendingOtp] = useState(false);
   const [otpFeedback, setOtpFeedback] = useState(null);
   const [markPaymentPaid, setMarkPaymentPaid] = useState(currentOrder.paymentStatus !== 'Paid');
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [showEmergencyOverride, setShowEmergencyOverride] = useState(false);
+
+  // Delivery Boy Verification Portal URL
+  const deliveryPortalUrl = typeof window !== 'undefined'
+    ? `${window.location.origin}/delivery-verify/${currentOrder._id}`
+    : `/delivery-verify/${currentOrder._id}`;
+
+  const handleCopyDeliveryLink = () => {
+    try {
+      navigator.clipboard.writeText(deliveryPortalUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2500);
+    } catch (e) {
+      console.error('Failed to copy delivery link:', e);
+    }
+  };
 
   // Format recipient phone for WhatsApp Web
   const cleanedPhone = (currentOrder.customerPhone || '').replace(/\D/g, '');
@@ -323,6 +343,20 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
             </button>
           </div>
 
+          {/* Dynamic Automation Indicator */}
+          <div className="mt-2.5 text-[11px] text-orange-950/90 dark:text-orange-200/90 font-semibold flex items-center gap-1.5 bg-orange-100/70 dark:bg-orange-950/40 px-3 py-1.5 rounded-xl border border-orange-200/80 dark:border-orange-900/60">
+            <span>⚡</span>
+            <span>
+              {fulfillmentStatus === 'Shipped'
+                ? 'Automated WhatsApp Dispatch: System will automatically send "Parcel Dispatched" notification to customer.'
+                : fulfillmentStatus === 'Out for Delivery'
+                ? 'Automated WhatsApp OTP: System will automatically generate 4-digit OTP & send "Out for Delivery" notification to customer.'
+                : fulfillmentStatus === 'Delivered'
+                ? 'Delivery Verification: Verified by delivery partner via Doorstep Verification portal at customer doorstep.'
+                : 'Status updates automatically notify customer on WhatsApp.'}
+            </span>
+          </div>
+
           {feedback && (
             <div
               className={`mt-2 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
@@ -476,48 +510,117 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                     </div>
                   )}
 
-                  {/* Delivery Verification Input for Delivery Boy */}
-                  <div className="pt-2">
-                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                      Enter 4-Digit OTP provided by Customer at doorstep:
-                    </label>
-                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                      <input
-                        type="text"
-                        maxLength={4}
-                        placeholder="e.g. 4829"
-                        value={deliveryOtpInput}
-                        onChange={(e) => setDeliveryOtpInput(e.target.value.replace(/\D/g, ''))}
-                        disabled={isMaxAttempts || isOtpExpired}
-                        className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-mono font-bold tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
-                      />
-
-                      <button
-                        onClick={handleVerifyDeliveryOtp}
-                        disabled={verifyingOtp || deliveryOtpInput.length !== 4 || isMaxAttempts || isOtpExpired}
-                        className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-40 transition-all cursor-pointer"
-                      >
-                        {verifyingOtp ? (
-                          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
-                        ) : (
-                          <CheckCircle2 className="h-4 w-4" />
-                        )}
-                        <span>Verify & Confirm Delivery</span>
-                      </button>
+                  {/* Doorstep Delivery Boy Portal Card */}
+                  <div className="p-4 rounded-2xl bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200 dark:border-indigo-800 space-y-3">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-indigo-600 dark:text-indigo-400 shrink-0" />
+                        <span className="text-xs font-black text-indigo-900 dark:text-indigo-200">
+                          Doorstep Delivery Partner Portal
+                        </span>
+                        <span className="px-2 py-0.5 rounded-full bg-indigo-200/80 dark:bg-indigo-900/60 text-indigo-800 dark:text-indigo-300 text-[10px] font-bold">
+                          Doorstep Verification
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        Admin does not enter OTP
+                      </span>
                     </div>
 
-                    {currentOrder.paymentStatus !== 'Paid' && (
-                      <div className="mt-2 flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          id="markPaidCheckbox"
-                          checked={markPaymentPaid}
-                          onChange={(e) => setMarkPaymentPaid(e.target.checked)}
-                          className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
-                        />
-                        <label htmlFor="markPaidCheckbox" className="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
-                          Collect payment (₹{currentOrder.totalPrice}) and automatically mark payment as <strong>Paid</strong> upon OTP verification
+                    <p className="text-[11px] text-indigo-900/80 dark:text-indigo-300 leading-relaxed">
+                      Share this portal link with your delivery partner. The delivery boy will open this link on their mobile phone, inspect the items, collect the COD amount (₹{currentOrder.totalPrice}), and enter the customer's 4-digit OTP at doorstep.
+                    </p>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                      <div className="flex-1 flex items-center gap-2 px-3 py-2 rounded-xl bg-white dark:bg-slate-900 border border-indigo-200 dark:border-indigo-800 text-xs font-mono text-slate-700 dark:text-slate-300 overflow-hidden">
+                        <Link2 className="h-3.5 w-3.5 shrink-0 text-indigo-500" />
+                        <span className="truncate">{deliveryPortalUrl}</span>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleCopyDeliveryLink}
+                          className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-xs transition-all cursor-pointer"
+                        >
+                          <Copy className="h-3.5 w-3.5" />
+                          <span>{copiedLink ? 'Copied Link!' : 'Copy Link for Delivery Boy'}</span>
+                        </button>
+                        <a
+                          href={deliveryPortalUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-indigo-300 dark:border-indigo-700 bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/40 text-xs font-bold transition-all cursor-pointer"
+                          title="Open delivery verification screen"
+                        >
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          <span>Open</span>
+                        </a>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 flex items-center gap-2 text-[11px] text-emerald-700 dark:text-emerald-400 font-semibold">
+                      <span>🔔</span>
+                      <span>
+                        Automatic Alert: Store owner <strong>{OWNER_NAME} ({BUSINESS_WHATSAPP_PHONE})</strong> will receive an instant WhatsApp alert immediately once the delivery boy completes verification.
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Optional Admin Emergency Override Toggle */}
+                  <div className="pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setShowEmergencyOverride(!showEmergencyOverride)}
+                      className="text-[11px] font-bold text-slate-500 hover:text-slate-800 dark:hover:text-slate-300 underline cursor-pointer"
+                    >
+                      {showEmergencyOverride ? '▲ Hide Emergency Admin Verification' : '▼ Need to verify manually? (Emergency Admin Override)'}
+                    </button>
+
+                    {showEmergencyOverride && (
+                      <div className="mt-3 p-3.5 rounded-2xl border border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/20 space-y-2.5">
+                        <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300">
+                          Emergency Admin Override: Enter 4-Digit OTP directly:
                         </label>
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                          <input
+                            type="text"
+                            maxLength={4}
+                            placeholder="e.g. 4829"
+                            value={deliveryOtpInput}
+                            onChange={(e) => setDeliveryOtpInput(e.target.value.replace(/\D/g, ''))}
+                            disabled={isMaxAttempts || isOtpExpired}
+                            className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-mono font-bold tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
+                          />
+
+                          <button
+                            onClick={handleVerifyDeliveryOtp}
+                            disabled={verifyingOtp || deliveryOtpInput.length !== 4 || isMaxAttempts || isOtpExpired}
+                            className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-40 transition-all cursor-pointer"
+                          >
+                            {verifyingOtp ? (
+                              <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                            ) : (
+                              <CheckCircle2 className="h-4 w-4" />
+                            )}
+                            <span>Emergency Confirm</span>
+                          </button>
+                        </div>
+
+                        {currentOrder.paymentStatus !== 'Paid' && (
+                          <div className="flex items-center gap-2 pt-1">
+                            <input
+                              type="checkbox"
+                              id="markPaidCheckbox"
+                              checked={markPaymentPaid}
+                              onChange={(e) => setMarkPaymentPaid(e.target.checked)}
+                              className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                            />
+                            <label htmlFor="markPaidCheckbox" className="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
+                              Collect payment (₹{currentOrder.totalPrice}) and automatically mark payment as <strong>Paid</strong> upon OTP verification
+                            </label>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

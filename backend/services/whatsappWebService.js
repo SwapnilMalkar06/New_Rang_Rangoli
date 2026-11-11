@@ -365,27 +365,52 @@ _Dispatched automatically via New Rang Rangoli Store System_`;
   }
 
   /**
-   * Resend 4-digit Delivery OTP to Customer WhatsApp
+   * Automated Parcel Dispatched Notification
+   */
+  async sendDispatchedNotification(order) {
+    if (!order || !order.customerPhone) return null;
+
+    const orderNum = order._id.toString().slice(-6).toUpperCase();
+    const text =
+`📦 *NEW RANG RANGOLI - PARCEL DISPATCHED!* 📦
+
+Namaste *${order.customerName}*! 🙏
+Exciting update! Your order *#${orderNum}* has been carefully packed and *DISPATCHED* from our workshop!
+
+📍 *Shipping Address:* ${order.shippingAddress}
+💰 *Total Amount:* ₹${Number(order.totalPrice || 0).toFixed(2)} (${order.paymentMethod})
+
+🚚 *Next Stage:* When your parcel is *Out for Delivery*, our system will automatically send your secret 4-Digit Delivery OTP to this WhatsApp chat. Please provide it to the delivery partner at your doorstep.
+
+📞 *Owner & Helpline:* ${OWNER_NAME} (${OWNER_PHONE})
+_New Rang Rangoli - Colors of Indian Tradition_`;
+
+    return this.sendRawMessage(order.customerPhone, text);
+  }
+
+  /**
+   * Resend / Send 4-digit Delivery OTP to Customer WhatsApp (Automated when Out for Delivery)
    */
   async sendDeliveryOtp(order, otpCode) {
     if (!order || !order.customerPhone) return null;
 
     const orderNum = order._id.toString().slice(-6).toUpperCase();
     const text =
-`🚨 *NEW RANG RANGOLI - DELIVERY VERIFICATION OTP* 🚨
+`🚚 *NEW RANG RANGOLI - PARCEL OUT FOR DELIVERY!* 🚚
 
 Namaste *${order.customerName}*! 🙏
-Your order *#${orderNum}* is *OUT FOR DELIVERY* today!
+Your order *#${orderNum}* is *OUT FOR DELIVERY* today with our delivery partner!
 
-🔑 *YOUR 4-DIGIT DELIVERY OTP:*
+🔑 *YOUR SECRET 4-DIGIT DELIVERY OTP:*
 ┏━━━━━━━━━━━━━━━━━━━┓
 ┃       👉  *${otpCode}*  👈       ┃
 ┗━━━━━━━━━━━━━━━━━━━┛
 
-⚠️ *INSTRUCTIONS:*
-1. Delivery address: _${order.shippingAddress}_
+⚠️ *DOORSTEP INSTRUCTIONS:*
+1. Our delivery partner will arrive at: _${order.shippingAddress}_
 2. Please verify your items upon arrival.
-3. *Provide this 4-digit OTP (${otpCode}) to the delivery partner only upon receiving your package.*
+3. *Provide this 4-digit OTP (${otpCode}) to the delivery partner ONLY upon receiving your package.*
+4. The delivery partner will enter this OTP on their phone to verify and complete handover.
 ${order.paymentMethod === 'COD' && order.paymentStatus !== 'Paid' ? `💵 *Amount to Pay on Delivery (COD):* ₹${Number(order.totalPrice || 0).toFixed(2)}\n` : ''}
 📞 *Owner & Helpline:* ${OWNER_NAME} (${OWNER_PHONE})
 _New Rang Rangoli - Colors of Indian Tradition_`;
@@ -395,6 +420,7 @@ _New Rang Rangoli - Colors of Indian Tradition_`;
 
   /**
    * Successful Delivery Confirmation
+   * Notifies customer AND sends automated delivery alert to Admin (Kishor Jamdade)
    */
   async sendDeliveryConfirmed(order) {
     if (!order || !order.customerPhone) return null;
@@ -408,7 +434,7 @@ _New Rang Rangoli - Colors of Indian Tradition_`;
 Namaste *${order.customerName}*! 🙏
 Your order *#${orderNum}* has been *DELIVERED & VERIFIED* successfully with your 4-digit OTP at ${deliveryTime}!
 
-✅ *Delivery Status:* OTP Verified & Completed
+✅ *Delivery Status:* OTP Verified by Delivery Partner
 📦 *Items Delivered:* ${(order.items || []).length} product(s)
 💰 *Total Amount:* ₹${Number(order.totalPrice || 0).toFixed(2)}
 
@@ -418,14 +444,29 @@ Thank you for choosing New Rang Rangoli! We hope our authentic festive colors br
 
 📞 *Customer Support:* ${OWNER_NAME} (${OWNER_PHONE})`;
 
-    // Send to customer
+    // 1. Send to customer
     const custResult = await this.sendRawMessage(order.customerPhone, text);
 
-    // Quick ping to owner
+    // 2. Notify Admin (Kishor Jamdade) that delivery boy verified OTP and handed over parcel
     try {
-      const ownerDeliveredPing = `✅ *ORDER #${orderNum} DELIVERED!* Customer: ${order.customerName} (+${formatPhoneNumber(order.customerPhone)}). Amount: ₹${Number(order.totalPrice || 0).toFixed(2)} (OTP Verified).`;
-      await this.sendRawMessage(NORMALIZED_OWNER_PHONE, ownerDeliveredPing);
-    } catch (e) {}
+      const ownerDeliveredAlert =
+`✅ *PARCEL DELIVERED - NEW RANG RANGOLI* ✅
+
+Namaste *${OWNER_NAME}*!
+The delivery partner has verified the 4-digit OTP and completed handover for Order *#${orderNum}*!
+
+👤 *Customer:* ${order.customerName} (+${formatPhoneNumber(order.customerPhone)})
+📍 *Address:* ${order.shippingAddress}
+🔑 *Verified OTP:* ${order.deliveryOtp?.code || 'Verified'}
+💰 *Payment Collected:* ₹${Number(order.totalPrice || 0).toFixed(2)} (${order.paymentMethod} - Paid)
+⏰ *Delivered At:* ${deliveryTime}
+
+_Order record marked as Delivered in database._`;
+
+      await this.sendRawMessage(NORMALIZED_OWNER_PHONE, ownerDeliveredAlert);
+    } catch (e) {
+      console.warn('[WhatsApp Web] Could not send admin delivery alert:', e.message);
+    }
 
     return custResult;
   }

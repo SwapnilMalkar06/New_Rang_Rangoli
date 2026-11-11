@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { CheckCircle2, ShoppingBag, Truck, Calendar } from 'lucide-react';
+import OrderTrackingBar from '../components/OrderTrackingBar';
 
 const OrderSuccessPage = () => {
   const { id } = useParams();
@@ -81,6 +82,14 @@ const OrderSuccessPage = () => {
             </p>
           </div>
         </div>
+
+        {/* 4-Stage Live Parcel Tracking Bar */}
+        <OrderTrackingBar
+          fulfillmentStatus={order.fulfillmentStatus}
+          deliveryOtp={order.deliveryOtp}
+          createdAt={order.createdAt}
+          updatedAt={order.updatedAt}
+        />
 
         {/* Order Details Panel */}
         <div className="rounded-2xl border border-slate-200/60 dark:border-slate-800 bg-white/40 dark:bg-slate-950/40 p-6 text-left space-y-4">

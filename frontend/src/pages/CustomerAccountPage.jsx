@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { selectUser, selectToken, logout } from '../store/authSlice';
 import { User, Package, LogOut, ShoppingBag, Calendar, MapPin, CheckCircle, Clock, Truck, ChevronRight, ShieldCheck } from 'lucide-react';
+import OrderTrackingBar from '../components/OrderTrackingBar';
 
 const CustomerAccountPage = () => {
   const { t, language } = useLanguage();
@@ -207,6 +208,16 @@ const CustomerAccountPage = () => {
                       </div>
                     </div>
 
+                    {/* 4-Stage Live Parcel Progress Bar */}
+                    <div className="my-4">
+                      <OrderTrackingBar
+                        fulfillmentStatus={order.fulfillmentStatus}
+                        deliveryOtp={order.deliveryOtp}
+                        createdAt={order.createdAt}
+                        updatedAt={order.updatedAt}
+                      />
+                    </div>
+
                     {/* Delivery OTP WhatsApp Notice if Out for Delivery */}
                     {isOutForDelivery && (
                       <div className="my-3 p-3 rounded-2xl bg-cyan-50/90 dark:bg-cyan-950/40 border border-cyan-200 dark:border-cyan-800 text-cyan-900 dark:text-cyan-200 text-xs flex items-start gap-3">
@@ -216,7 +227,7 @@ const CustomerAccountPage = () => {
                             Your package is Out for Delivery Today!
                           </p>
                           <p className="text-[11px] text-cyan-800 dark:text-cyan-300 mt-0.5 leading-relaxed">
-                            A 6-digit Delivery Verification OTP was sent to your WhatsApp (<strong>{order.customerPhone}</strong>). Please share this OTP with your delivery partner <strong>ONLY after inspecting and receiving your parcel</strong>.
+                            A 4-digit Delivery Verification OTP was automatically sent to your WhatsApp (<strong>{order.customerPhone}</strong>). Please share this OTP with your delivery partner <strong>ONLY after inspecting and receiving your parcel at doorstep</strong>.
                           </p>
                         </div>
                       </div>

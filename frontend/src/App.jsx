@@ -12,6 +12,7 @@ import OrderSuccessPage from './pages/OrderSuccessPage';
 import CustomerAuthPage from './pages/CustomerAuthPage';
 import CustomerAccountPage from './pages/CustomerAccountPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
+import DeliveryVerifyPage from './pages/DeliveryVerifyPage';
 import AdminRoute from './components/AdminRoute';
 import RangoliColorCatalog from './components/RangoliColorCatalog';
 
@@ -51,6 +52,10 @@ const TitleUpdater = () => {
       case '/wholesale':
         document.title = 'Wholesale Business & Retailer Portal | New Rang Rangoli';
         break;
+      case '/delivery':
+      case '/delivery-verify':
+        document.title = 'Doorstep Delivery Verification | New Rang Rangoli';
+        break;
       case '/cart':
         document.title = 'Your Shopping Cart | New Rang Rangoli';
         break;
@@ -89,6 +94,9 @@ const App = () => {
             <Route path="/checkout" element={<CheckoutPage />} />
             <Route path="/wholesale" element={<WholesalePage />} />
             <Route path="/order-success/:id" element={<OrderSuccessPage />} />
+            <Route path="/delivery-verify/:id" element={<DeliveryVerifyPage />} />
+            <Route path="/delivery-verify" element={<DeliveryVerifyPage />} />
+            <Route path="/delivery" element={<DeliveryVerifyPage />} />
             <Route
               path="/admin"
               element={
