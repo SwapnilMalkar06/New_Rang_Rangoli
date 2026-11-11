@@ -104,9 +104,14 @@ const OrderSchema = new Schema({
   deliveryOtp: {
     code: {
       type: String,
-      default: null
+      default: null,
+      trim: true
     },
     generatedAt: {
+      type: Date,
+      default: null
+    },
+    expiresAt: {
       type: Date,
       default: null
     },
@@ -121,6 +126,10 @@ const OrderSchema = new Schema({
     attempts: {
       type: Number,
       default: 0
+    },
+    maxAttempts: {
+      type: Number,
+      default: 5
     }
   },
   whatsappLogs: [{

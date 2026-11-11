@@ -271,7 +271,11 @@ const FestivalCards = () => {
             const specialties = isMarathi ? fest.specialtiesMr : fest.specialtiesEn;
             const popularBadge = isMarathi ? fest.popularBadgeMr : fest.popularBadgeEn;
 
-            const shopUrl = `/shop?tag=${encodeURIComponent(fest.tag)}&theme=${encodeURIComponent(fest.theme)}`;
+            const isHoli = fest.id === 'holi' || fest.tag === 'Holi' || fest.category === 'Holi Color';
+            const festivalCategory = fest.category || (isHoli ? 'Holi Color' : 'Rangoli');
+            const shopUrl = isHoli
+              ? `/shop?category=${encodeURIComponent('Holi Color')}`
+              : `/shop?category=${encodeURIComponent(festivalCategory)}&tag=${encodeURIComponent(fest.tag)}&theme=${encodeURIComponent(fest.theme)}`;
             const toolsUrl = `/shop?category=Tools&search=${encodeURIComponent(fest.searchQuery)}`;
 
             return (

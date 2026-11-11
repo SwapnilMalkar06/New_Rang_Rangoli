@@ -10,6 +10,7 @@ const adminRoutes = require('./routes/adminRoutes');
 const colorRoutes = require('./routes/colorRoutes');
 const Product = require('./models/Product');
 const User = require('./models/User');
+const whatsappWebService = require('./services/whatsappWebService');
 
 const app = express();
 
@@ -360,6 +361,10 @@ if (require.main === module) {
     seedAdmin();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
+      // Boot WhatsApp Web client in background
+      whatsappWebService.initialize().catch((err) => {
+        console.error('WhatsApp Web service startup warning:', err.message);
+      });
     });
   });
 }

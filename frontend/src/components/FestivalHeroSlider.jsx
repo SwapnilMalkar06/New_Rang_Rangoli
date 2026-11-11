@@ -92,7 +92,11 @@ const FestivalHeroSlider = () => {
   const seasonTitle = isMarathi ? activeSlide.seasonTitleMr : activeSlide.seasonTitleEn;
   const currentMonthLabel = isMarathi ? currentSeason.monthNameMr : currentSeason.monthNameEn;
 
-  const shopUrl = `/shop?tag=${encodeURIComponent(activeSlide.tag)}&theme=${encodeURIComponent(activeSlide.theme || 'default')}`;
+  const isHoli = activeSlide.id === 'holi' || activeSlide.tag === 'Holi' || activeSlide.category === 'Holi Color';
+  const slideCategory = activeSlide.category || (isHoli ? 'Holi Color' : 'Rangoli');
+  const shopUrl = isHoli
+    ? `/shop?category=${encodeURIComponent('Holi Color')}`
+    : `/shop?category=${encodeURIComponent(slideCategory)}&tag=${encodeURIComponent(activeSlide.tag)}&theme=${encodeURIComponent(activeSlide.theme || 'default')}`;
 
   return (
     <div

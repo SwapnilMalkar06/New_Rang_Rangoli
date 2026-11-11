@@ -33,6 +33,7 @@ const FULFILLMENT_OPTIONS = [
 const PAYMENT_OPTIONS = ['Pending', 'Paid', 'Failed'];
 
 const BUSINESS_WHATSAPP_PHONE = '+91 70576 17451';
+const OWNER_NAME = 'Kishor Jamdade';
 
 const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
   if (!isOpen || !order) return null;
@@ -65,7 +66,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
       // Check if user is attempting to mark as Delivered without verifying OTP
       if (fulfillmentStatus === 'Delivered' && !currentOrder.deliveryOtp?.isVerified) {
         throw new Error(
-          'Customer OTP verification is compulsory! Please enter the 6-digit OTP in the Delivery Verification section below to confirm delivery.'
+          'Customer OTP verification is compulsory! Please enter the 4-digit OTP in the Delivery Verification section below to confirm delivery.'
         );
       }
 
@@ -117,7 +118,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
       setFulfillmentStatus('Out for Delivery');
       setOtpFeedback({
         type: 'success',
-        message: `OTP (${data.data?.deliveryOtp?.code}) sent to customer WhatsApp (+${currentOrder.customerPhone}) via ${BUSINESS_WHATSAPP_PHONE}!`
+        message: `4-Digit OTP (${data.data?.deliveryOtp?.code}) sent to customer WhatsApp (+${currentOrder.customerPhone}) from ${OWNER_NAME} (${BUSINESS_WHATSAPP_PHONE})!`
       });
       onUpdated(data.data);
       setTimeout(() => setOtpFeedback(null), 6000);
@@ -130,8 +131,8 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
 
   // Verify Delivery OTP entered by delivery person
   const handleVerifyDeliveryOtp = async () => {
-    if (!deliveryOtpInput || deliveryOtpInput.trim().length === 0) {
-      setOtpFeedback({ type: 'error', message: 'Please enter the 6-digit OTP provided by customer.' });
+    if (!deliveryOtpInput || deliveryOtpInput.trim().length !== 4) {
+      setOtpFeedback({ type: 'error', message: 'Please enter the exact 4-digit OTP provided by customer.' });
       return;
     }
 
@@ -386,7 +387,7 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                 <CheckCircle2 className="h-5 w-5 text-emerald-600 shrink-0 mt-0.5" />
                 <div className="text-xs">
                   <p className="font-extrabold text-sm text-emerald-800 dark:text-emerald-300">
-                    Parcel Delivered & OTP Verified Successfully!
+                    Parcel Delivered & 4-Digit OTP Verified Successfully!
                   </p>
                   <p className="mt-0.5 text-emerald-700 dark:text-emerald-400">
                     Verified OTP Code: <strong className="font-mono">{currentOrder.deliveryOtp?.code}</strong>
@@ -397,103 +398,149 @@ const OrderDetailModal = ({ order, isOpen, onClose, onUpdated, token }) => {
                     )}
                   </p>
                   <p className="text-[11px] text-emerald-600 dark:text-emerald-500 mt-1">
-                    Customer received final delivery confirmation on WhatsApp from {BUSINESS_WHATSAPP_PHONE}.
+                    Customer received final delivery confirmation on WhatsApp from {OWNER_NAME} ({BUSINESS_WHATSAPP_PHONE}).
                   </p>
                 </div>
               </div>
-            ) : (
-              <div className="mt-4 space-y-3">
-                <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <span className="font-semibold text-slate-600 dark:text-slate-300">Active OTP Status:</span>
-                    {currentOrder.deliveryOtp?.code ? (
-                      <span className="px-2.5 py-1 rounded-lg bg-orange-100 dark:bg-orange-950 font-mono font-black text-orange-700 dark:text-orange-300 tracking-wider">
-                        {currentOrder.deliveryOtp.code}
+            ) : (() => {
+              const isOtpExpired = currentOrder.deliveryOtp?.expiresAt && new Date() > new Date(currentOrder.deliveryOtp.expiresAt);
+              const attemptsCount = currentOrder.deliveryOtp?.attempts || 0;
+              const maxAttempts = currentOrder.deliveryOtp?.maxAttempts || 5;
+              const isMaxAttempts = attemptsCount >= maxAttempts;
+              const formattedExpiry = currentOrder.deliveryOtp?.expiresAt 
+                ? new Date(currentOrder.deliveryOtp.expiresAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })
+                : null;
+
+              return (
+                <div className="mt-4 space-y-3">
+                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-slate-600 dark:text-slate-300">Active OTP:</span>
+                      {currentOrder.deliveryOtp?.code ? (
+                        <span className="px-2.5 py-1 rounded-lg bg-orange-100 dark:bg-orange-950 font-mono font-black text-orange-700 dark:text-orange-300 tracking-wider">
+                          {currentOrder.deliveryOtp.code}
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 italic">Auto-generated upon order</span>
+                      )}
+
+                      {/* Expiration Badge */}
+                      {formattedExpiry && (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          isOtpExpired 
+                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950 dark:text-rose-300' 
+                            : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                        }`}>
+                          {isOtpExpired ? 'Expired' : `Expires: ${formattedExpiry}`}
+                        </span>
+                      )}
+
+                      {/* Attempt Count Badge */}
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                        isMaxAttempts 
+                          ? 'bg-red-500 text-white animate-pulse' 
+                          : attemptsCount > 0 
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300' 
+                            : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'
+                      }`}>
+                        Attempts: {attemptsCount}/{maxAttempts}
                       </span>
-                    ) : (
-                      <span className="text-slate-400 italic">Not generated yet</span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={handleSendDeliveryOtp}
-                    disabled={sendingOtp}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
-                  >
-                    {sendingOtp ? (
-                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Send className="h-3.5 w-3.5" />
-                    )}
-                    <span>
-                      {currentOrder.deliveryOtp?.code ? 'Resend OTP to Customer WhatsApp' : 'Generate & Send OTP via WhatsApp'}
-                    </span>
-                  </button>
-                </div>
-
-                {/* Delivery Verification Input for Delivery Boy */}
-                <div className="pt-2">
-                  <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
-                    Enter 6-Digit OTP provided by Customer at doorstep:
-                  </label>
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                    <input
-                      type="text"
-                      maxLength={6}
-                      placeholder="e.g. 583921"
-                      value={deliveryOtpInput}
-                      onChange={(e) => setDeliveryOtpInput(e.target.value.replace(/\D/g, ''))}
-                      className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-mono font-bold tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-500"
-                    />
+                    </div>
 
                     <button
-                      onClick={handleVerifyDeliveryOtp}
-                      disabled={verifyingOtp || deliveryOtpInput.length < 6}
-                      className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-40 transition-all cursor-pointer"
+                      onClick={handleSendDeliveryOtp}
+                      disabled={sendingOtp}
+                      className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold transition-all shadow-xs disabled:opacity-50 cursor-pointer"
                     >
-                      {verifyingOtp ? (
-                        <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                      {sendingOtp ? (
+                        <RefreshCw className="h-3.5 w-3.5 animate-spin" />
                       ) : (
-                        <CheckCircle2 className="h-4 w-4" />
+                        <Send className="h-3.5 w-3.5" />
                       )}
-                      <span>Verify & Confirm Handover</span>
+                      <span>
+                        {currentOrder.deliveryOtp?.code ? 'Resend 4-Digit OTP' : 'Send 4-Digit OTP'}
+                      </span>
                     </button>
                   </div>
 
-                  {currentOrder.paymentStatus !== 'Paid' && (
-                    <div className="mt-2 flex items-center gap-2">
+                  {/* Warning if locked or expired */}
+                  {isMaxAttempts && (
+                    <div className="p-2 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 text-rose-700 dark:text-rose-300 text-xs font-semibold">
+                      ⚠️ Maximum 5 verification attempts exceeded. Please click <strong>"Resend 4-Digit OTP"</strong> above to issue a new code.
+                    </div>
+                  )}
+
+                  {isOtpExpired && !isMaxAttempts && (
+                    <div className="p-2 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-700 dark:text-amber-300 text-xs font-semibold">
+                      ⏳ This OTP has expired after 24 hours. Please click <strong>"Resend 4-Digit OTP"</strong> to issue a fresh code.
+                    </div>
+                  )}
+
+                  {/* Delivery Verification Input for Delivery Boy */}
+                  <div className="pt-2">
+                    <label className="block text-[11px] font-bold text-slate-700 dark:text-slate-300 mb-1">
+                      Enter 4-Digit OTP provided by Customer at doorstep:
+                    </label>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
-                        type="checkbox"
-                        id="markPaidCheckbox"
-                        checked={markPaymentPaid}
-                        onChange={(e) => setMarkPaymentPaid(e.target.checked)}
-                        className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                        type="text"
+                        maxLength={4}
+                        placeholder="e.g. 4829"
+                        value={deliveryOtpInput}
+                        onChange={(e) => setDeliveryOtpInput(e.target.value.replace(/\D/g, ''))}
+                        disabled={isMaxAttempts || isOtpExpired}
+                        className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3.5 py-2 text-sm font-mono font-bold tracking-widest text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-hidden focus:ring-2 focus:ring-orange-500 disabled:opacity-50"
                       />
-                      <label htmlFor="markPaidCheckbox" className="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
-                        Collect payment (₹{currentOrder.totalPrice}) and automatically mark payment as <strong>Paid</strong> upon OTP verification
-                      </label>
+
+                      <button
+                        onClick={handleVerifyDeliveryOtp}
+                        disabled={verifyingOtp || deliveryOtpInput.length !== 4 || isMaxAttempts || isOtpExpired}
+                        className="flex items-center justify-center gap-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 px-5 py-2 text-xs font-bold text-white shadow-md disabled:opacity-40 transition-all cursor-pointer"
+                      >
+                        {verifyingOtp ? (
+                          <div className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                        ) : (
+                          <CheckCircle2 className="h-4 w-4" />
+                        )}
+                        <span>Verify & Confirm Delivery</span>
+                      </button>
+                    </div>
+
+                    {currentOrder.paymentStatus !== 'Paid' && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          id="markPaidCheckbox"
+                          checked={markPaymentPaid}
+                          onChange={(e) => setMarkPaymentPaid(e.target.checked)}
+                          className="rounded border-slate-300 text-orange-600 focus:ring-orange-500 cursor-pointer"
+                        />
+                        <label htmlFor="markPaidCheckbox" className="text-xs text-slate-600 dark:text-slate-400 font-medium cursor-pointer">
+                          Collect payment (₹{currentOrder.totalPrice}) and automatically mark payment as <strong>Paid</strong> upon OTP verification
+                        </label>
+                      </div>
+                    )}
+                  </div>
+
+                  {otpFeedback && (
+                    <div
+                      className={`mt-2 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
+                        otpFeedback.type === 'success'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                      }`}
+                    >
+                      {otpFeedback.type === 'success' ? (
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
+                      ) : (
+                        <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
+                      )}
+                      <span className="font-semibold">{otpFeedback.message}</span>
                     </div>
                   )}
                 </div>
-
-                {otpFeedback && (
-                  <div
-                    className={`mt-2 p-2.5 rounded-xl text-xs flex items-center gap-2 ${
-                      otpFeedback.type === 'success'
-                        ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
-                        : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
-                    }`}
-                  >
-                    {otpFeedback.type === 'success' ? (
-                      <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600" />
-                    ) : (
-                      <AlertCircle className="h-4 w-4 shrink-0 text-rose-600" />
-                    )}
-                    <span className="font-semibold">{otpFeedback.message}</span>
-                  </div>
-                )}
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Customer & Shipping Information Cards */}

@@ -2,6 +2,7 @@ const mongoose = require('mongoose');
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const whatsappService = require('../services/whatsappService');
+const whatsappWebService = require('../services/whatsappWebService');
 
 /**
  * @desc    Create a new order online
@@ -107,7 +108,11 @@ exports.createOrder = async (req, res) => {
       ? Number(totalPrice)
       : Math.round(calculatedTotal * 100) / 100;
 
-    // Create the order
+    // Generate secure 4-digit Delivery OTP and 24-hour expiration window
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours expiry
+
+    // Create the order with 4-digit OTP pre-initialized
     const order = await Order.create({
       customerName,
       customerEmail,
@@ -117,17 +122,25 @@ exports.createOrder = async (req, res) => {
       totalPrice: finalTotal,
       paymentStatus: paymentMethod === 'Online' || paymentMethod === 'Razorpay' ? 'Pending' : 'Pending',
       paymentMethod: paymentMethod || 'COD',
-      fulfillmentStatus: 'Processing'
+      fulfillmentStatus: 'Processing',
+      deliveryOtp: {
+        code: otpCode,
+        generatedAt: new Date(),
+        expiresAt: expiresAt,
+        isVerified: false,
+        attempts: 0,
+        maxAttempts: 5
+      }
     });
 
-    // Send instant WhatsApp order confirmation to customer
+    // Send instant WhatsApp order summary + 4-digit OTP to Customer and Alert to Kishor Jamdade
     try {
-      const waResult = await whatsappService.sendOrderConfirmation(order);
+      const waResult = await whatsappWebService.sendOrderSummaryAndOtp(order, otpCode);
       if (waResult) {
         order.whatsappLogs.push({
-          type: 'ORDER_CONFIRMATION',
+          type: 'ORDER_CONFIRMATION_AND_OTP',
           phone: order.customerPhone,
-          message: 'Order confirmation dispatched via WhatsApp',
+          message: `Order summary and 4-digit OTP (${otpCode}) dispatched via WhatsApp (Kishor Jamdade)`,
           sentAt: new Date(),
           isSimulated: !!waResult.simulated
         });
@@ -301,7 +314,7 @@ exports.updateOrderStatus = async (req, res) => {
         if (!suppliedOtp) {
           return res.status(400).json({
             success: false,
-            message: 'Delivery OTP is compulsory! The delivery partner must enter the 6-digit OTP sent to the customer’s WhatsApp to confirm delivery.'
+            message: 'Delivery OTP is compulsory! The delivery partner must enter the 4-digit OTP sent to the customer’s WhatsApp to confirm delivery.'
           });
         }
 
@@ -312,12 +325,29 @@ exports.updateOrderStatus = async (req, res) => {
           });
         }
 
+        // Check if max attempts (5) exceeded
+        if ((order.deliveryOtp.attempts || 0) >= (order.deliveryOtp.maxAttempts || 5)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Maximum OTP verification attempts (5) exceeded! Please resend a new 4-digit OTP to the customer.'
+          });
+        }
+
+        // Check if 24-hour expiration window passed
+        if (order.deliveryOtp.expiresAt && new Date() > new Date(order.deliveryOtp.expiresAt)) {
+          return res.status(400).json({
+            success: false,
+            message: 'Delivery OTP has expired! Please click "Resend OTP" to issue a fresh 4-digit OTP.'
+          });
+        }
+
         if (suppliedOtp !== String(order.deliveryOtp.code).trim()) {
           order.deliveryOtp.attempts = (order.deliveryOtp.attempts || 0) + 1;
           await order.save();
+          const remainingAttempts = Math.max(0, (order.deliveryOtp.maxAttempts || 5) - order.deliveryOtp.attempts);
           return res.status(400).json({
             success: false,
-            message: 'Invalid Delivery OTP! Please enter the exact 6-digit OTP received on the customer’s WhatsApp.'
+            message: `Invalid Delivery OTP! ${remainingAttempts} attempt(s) remaining.`
           });
         }
 
@@ -341,25 +371,28 @@ exports.updateOrderStatus = async (req, res) => {
 
     // Trigger WhatsApp Notifications according to status transition
     if (fulfillmentStatus === 'Out for Delivery') {
-      // Auto-generate fresh 6-digit delivery OTP if not already active
-      if (!order.deliveryOtp?.code || order.deliveryOtp?.isVerified) {
-        const generatedCode = Math.floor(100000 + Math.random() * 900000).toString();
+      // Auto-generate fresh 4-digit delivery OTP if not already active or if expired
+      const isExpired = order.deliveryOtp?.expiresAt && new Date() > new Date(order.deliveryOtp.expiresAt);
+      if (!order.deliveryOtp?.code || order.deliveryOtp?.isVerified || isExpired) {
+        const generatedCode = Math.floor(1000 + Math.random() * 9000).toString();
         order.deliveryOtp = {
           code: generatedCode,
           generatedAt: new Date(),
+          expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
           isVerified: false,
-          attempts: 0
+          attempts: 0,
+          maxAttempts: 5
         };
       }
 
       await order.save();
 
       try {
-        const otpResult = await whatsappService.sendDeliveryOtp(order, order.deliveryOtp.code);
+        const otpResult = await whatsappWebService.sendDeliveryOtp(order, order.deliveryOtp.code);
         order.whatsappLogs.push({
           type: 'DELIVERY_OTP',
           phone: order.customerPhone,
-          message: `Delivery OTP (${order.deliveryOtp.code}) sent via WhatsApp`,
+          message: `Delivery OTP (${order.deliveryOtp.code}) sent via WhatsApp (Kishor Jamdade)`,
           sentAt: new Date(),
           isSimulated: !!otpResult?.simulated
         });
@@ -369,11 +402,11 @@ exports.updateOrderStatus = async (req, res) => {
     } else if (statusChanged) {
       if (fulfillmentStatus === 'Delivered') {
         try {
-          const delResult = await whatsappService.sendDeliveryConfirmed(order);
+          const delResult = await whatsappWebService.sendDeliveryConfirmed(order);
           order.whatsappLogs.push({
             type: 'DELIVERY_CONFIRMATION',
             phone: order.customerPhone,
-            message: 'Order delivery confirmed via WhatsApp after OTP verification',
+            message: 'Order delivery confirmed via WhatsApp after 4-digit OTP verification',
             sentAt: new Date(),
             isSimulated: !!delResult?.simulated
           });
@@ -415,7 +448,7 @@ exports.updateOrderStatus = async (req, res) => {
 };
 
 /**
- * @desc    Generate and send/resend Delivery OTP to customer's WhatsApp
+ * @desc    Generate and send/resend 4-digit Delivery OTP to customer's WhatsApp
  * @route   POST /api/orders/:id/send-delivery-otp
  * @access  Private/Admin
  */
@@ -436,12 +469,15 @@ exports.sendDeliveryOtp = async (req, res) => {
       });
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    // Generate fresh uniform 4-digit code (1000-9999) with 24-hour expiration
+    const otpCode = Math.floor(1000 + Math.random() * 9000).toString();
     order.deliveryOtp = {
       code: otpCode,
       generatedAt: new Date(),
+      expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000),
       isVerified: false,
-      attempts: 0
+      attempts: 0,
+      maxAttempts: 5
     };
 
     // Promote to 'Out for Delivery' automatically
@@ -449,12 +485,12 @@ exports.sendDeliveryOtp = async (req, res) => {
       order.fulfillmentStatus = 'Out for Delivery';
     }
 
-    const waResult = await whatsappService.sendDeliveryOtp(order, otpCode);
+    const waResult = await whatsappWebService.sendDeliveryOtp(order, otpCode);
 
     order.whatsappLogs.push({
       type: 'DELIVERY_OTP',
       phone: order.customerPhone,
-      message: `Delivery OTP (${otpCode}) sent to customer WhatsApp (+${order.customerPhone})`,
+      message: `4-Digit Delivery OTP (${otpCode}) resent to customer WhatsApp (+${order.customerPhone})`,
       sentAt: new Date(),
       isSimulated: !!waResult?.simulated
     });
@@ -463,7 +499,7 @@ exports.sendDeliveryOtp = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: `Delivery OTP (${otpCode}) sent to customer WhatsApp (+${order.customerPhone})`,
+      message: `4-Digit Delivery OTP (${otpCode}) sent to customer WhatsApp (+${order.customerPhone})`,
       data: order,
       simulated: !!waResult?.simulated
     });
@@ -478,7 +514,7 @@ exports.sendDeliveryOtp = async (req, res) => {
 };
 
 /**
- * @desc    Verify delivery OTP entered by delivery person / admin to confirm delivery
+ * @desc    Verify 4-digit delivery OTP entered by delivery person / admin to confirm delivery
  * @route   POST /api/orders/:id/verify-delivery
  * @access  Private/Admin
  */
@@ -490,6 +526,14 @@ exports.verifyDeliveryOtp = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Delivery OTP is required to confirm delivery.'
+      });
+    }
+
+    const cleanInputOtp = String(otp).trim();
+    if (!/^\d{4}$/.test(cleanInputOtp)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid 4-digit numeric OTP.'
       });
     }
 
@@ -516,15 +560,31 @@ exports.verifyDeliveryOtp = async (req, res) => {
       });
     }
 
-    const cleanInputOtp = String(otp).trim();
+    // Check attempts lockout
+    if ((order.deliveryOtp.attempts || 0) >= (order.deliveryOtp.maxAttempts || 5)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Maximum OTP verification attempts (5) reached! Please click "Resend OTP" to generate a fresh 4-digit code.'
+      });
+    }
+
+    // Check 24-hour expiration window
+    if (order.deliveryOtp.expiresAt && new Date() > new Date(order.deliveryOtp.expiresAt)) {
+      return res.status(400).json({
+        success: false,
+        message: 'This Delivery OTP has expired (valid for 24 hours). Please click "Resend OTP" to issue a new code.'
+      });
+    }
+
     const cleanOrderOtp = String(order.deliveryOtp.code).trim();
 
     if (cleanInputOtp !== cleanOrderOtp) {
       order.deliveryOtp.attempts = (order.deliveryOtp.attempts || 0) + 1;
       await order.save();
+      const remainingAttempts = Math.max(0, (order.deliveryOtp.maxAttempts || 5) - order.deliveryOtp.attempts);
       return res.status(400).json({
         success: false,
-        message: 'Incorrect Delivery OTP! Please check the 6-digit code received on the customer’s WhatsApp.'
+        message: `Incorrect 4-Digit Delivery OTP! ${remainingAttempts} attempt(s) remaining.`
       });
     }
 
@@ -537,12 +597,12 @@ exports.verifyDeliveryOtp = async (req, res) => {
       order.paymentStatus = 'Paid';
     }
 
-    const waResult = await whatsappService.sendDeliveryConfirmed(order);
+    const waResult = await whatsappWebService.sendDeliveryConfirmed(order);
 
     order.whatsappLogs.push({
       type: 'DELIVERY_CONFIRMATION',
       phone: order.customerPhone,
-      message: 'Delivery confirmed & verified with OTP',
+      message: 'Delivery confirmed & verified with 4-digit OTP',
       sentAt: new Date(),
       isSimulated: !!waResult?.simulated
     });
@@ -551,7 +611,7 @@ exports.verifyDeliveryOtp = async (req, res) => {
 
     res.status(200).json({
       success: true,
-      message: 'Delivery successfully verified with OTP and marked as Delivered!',
+      message: 'Delivery successfully verified with 4-digit OTP and marked as Delivered!',
       data: order
     });
   } catch (error) {

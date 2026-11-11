@@ -92,10 +92,15 @@ const ProductGrid = () => {
 
   // Search parameters for syncing Navbar category clicks
   const [searchParams, setSearchParams] = useSearchParams();
-  const categoryParam = searchParams.get('category') || 'Rangoli';
+  const rawCategoryParam = searchParams.get('category');
   const tagParam = searchParams.get('tag') || '';
   const searchParam = searchParams.get('search') || '';
   const themeParam = searchParams.get('theme') || '';
+
+  // Determine category: if tag is Holi or search refers to holi / dhulivandan and no category is specified, default to 'Holi Color' instead of 'Rangoli'
+  const isHoli = (tagParam && tagParam.toLowerCase() === 'holi') ||
+                 (searchParam && (searchParam.toLowerCase().includes('holi') || searchParam.toLowerCase().includes('dhulivandan')));
+  const categoryParam = rawCategoryParam || (isHoli ? 'Holi Color' : 'Rangoli');
 
   // Local state for dynamic theme engine toggle
   const [activeTheme, setActiveTheme] = useState('default');

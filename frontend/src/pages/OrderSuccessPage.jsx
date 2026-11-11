@@ -71,9 +71,14 @@ const OrderSuccessPage = () => {
           <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto text-xs sm:text-sm">
             {t('orderSuccessMessage')}
           </p>
-          <div className="inline-flex items-center gap-2 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-2 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
-            <span>💬</span>
-            <span>WhatsApp order confirmation sent to <strong>{order.customerPhone}</strong> from <strong>+91 70576 17451</strong></span>
+          <div className="flex flex-col items-center gap-1.5 rounded-2xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 px-4 py-3 text-xs font-semibold text-emerald-800 dark:text-emerald-300">
+            <div className="flex items-center gap-2">
+              <span>💬</span>
+              <span>{t('orderOtpSentNotice')}</span>
+            </div>
+            <p className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
+              {t('orderOtpKeepSafePrompt')}
+            </p>
           </div>
         </div>
 
@@ -146,7 +151,7 @@ const OrderSuccessPage = () => {
           const itemsListText = (order.items || [])
             .map((item, idx) => `  ${idx + 1}. *${item.name}* ${item.selectedWeight ? `(${item.selectedWeight})` : ''} × ${item.quantity} = ₹${((item.priceAtPurchase || 0) * item.quantity).toFixed(2)}`)
             .join('\n');
-          const receiptMsg = `🌸 *NEW RANG RANGOLI - Order Receipt* 🌸\n\nNamaste *${order.customerName}*! 🙏\nThank you for ordering with New Rang Rangoli.\n\n📋 *Order Details:*\n• *Order ID:* #${order._id.slice(-6).toUpperCase()}\n• *Total Amount:* ₹${order.totalPrice.toFixed(2)}\n• *Payment:* ${order.paymentMethod}\n• *Delivery Address:* ${order.shippingAddress}\n\n🛒 *Items Ordered:*\n${itemsListText}\n\n📞 *Business Helpline:* +91 70576 17451`;
+          const receiptMsg = `🌸 *NEW RANG RANGOLI - Order Receipt & 4-Digit OTP* 🌸\n\nNamaste *${order.customerName}*! 🙏\nThank you for ordering with New Rang Rangoli.\n\n📋 *Order Details:*\n• *Order ID:* #${order._id.slice(-6).toUpperCase()}\n• *Total Amount:* ₹${order.totalPrice.toFixed(2)}\n• *Payment:* ${order.paymentMethod}\n• *Delivery Address:* ${order.shippingAddress}\n${order.deliveryOtp?.code ? `• *4-Digit Delivery OTP:* *${order.deliveryOtp.code}*\n` : ''}\n🛒 *Items Ordered:*\n${itemsListText}\n\n📞 *Owner & Helpline:* Kishor Jamdade (+91 70576 17451)`;
           const custWaUrl = `https://wa.me/${normalizedCustPhone}?text=${encodeURIComponent(receiptMsg)}`;
           const shopWaUrl = `https://wa.me/917057617451?text=${encodeURIComponent(`New Order Placed!\nOrder #${order._id.slice(-6).toUpperCase()} by ${order.customerName} (${order.customerPhone})\nTotal: ₹${order.totalPrice.toFixed(2)}\n\n${itemsListText}`)}`;
 
@@ -159,13 +164,13 @@ const OrderSuccessPage = () => {
                   </div>
                   <div>
                     <h4 className="text-sm font-black text-slate-900 dark:text-white flex items-center gap-2">
-                      <span>WhatsApp Order Confirmation</span>
+                      <span>WhatsApp Order Receipt & Delivery OTP</span>
                       <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300 text-[10px] font-bold">
                         Instant
                       </span>
                     </h4>
                     <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5">
-                      Send or view your itemized invoice directly in WhatsApp on <strong>+{normalizedCustPhone}</strong>.
+                      Your itemized invoice and confidential 4-digit doorstep delivery OTP have been sent to <strong>+{normalizedCustPhone}</strong> from <strong>Kishor Jamdade (+91 70576 17451)</strong>.
                     </p>
                   </div>
                 </div>
@@ -185,7 +190,7 @@ const OrderSuccessPage = () => {
                     rel="noreferrer"
                     className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold px-3 py-2.5 text-xs shadow-xs transition-all cursor-pointer"
                   >
-                    <span>💬 Message Workshop (+91 70576 17451)</span>
+                    <span>💬 Chat with Kishor Jamdade (+91 70576 17451)</span>
                   </a>
                 </div>
               </div>

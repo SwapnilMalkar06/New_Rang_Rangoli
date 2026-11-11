@@ -1,6 +1,7 @@
 const Order = require('../models/Order');
 const Product = require('../models/Product');
 const User = require('../models/User');
+const whatsappWebService = require('../services/whatsappWebService');
 
 /**
  * @desc    Get aggregate analytics and KPI statistics for the Admin Dashboard
@@ -231,6 +232,71 @@ exports.updateUserRole = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Failed to update user role',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Get live WhatsApp Web connection status & QR code for Kishor Jamdade (+91 70576 17451)
+ * @route   GET /api/admin/whatsapp/status
+ * @access  Private/Admin
+ */
+exports.getWhatsAppStatus = async (req, res) => {
+  try {
+    const statusData = whatsappWebService.getStatus();
+    res.status(200).json({
+      success: true,
+      data: statusData
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to retrieve WhatsApp Web status',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Restart WhatsApp Web service
+ * @route   POST /api/admin/whatsapp/restart
+ * @access  Private/Admin
+ */
+exports.restartWhatsAppClient = async (req, res) => {
+  try {
+    const statusData = await whatsappWebService.restart();
+    res.status(200).json({
+      success: true,
+      message: 'WhatsApp Web service restart initiated',
+      data: statusData
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to restart WhatsApp Web service',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Logout WhatsApp Web session and generate fresh QR
+ * @route   POST /api/admin/whatsapp/logout
+ * @access  Private/Admin
+ */
+exports.logoutWhatsAppClient = async (req, res) => {
+  try {
+    const statusData = await whatsappWebService.logout();
+    res.status(200).json({
+      success: true,
+      message: 'WhatsApp Web session disconnected and fresh QR generated',
+      data: statusData
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Failed to disconnect WhatsApp Web session',
       error: error.message
     });
   }

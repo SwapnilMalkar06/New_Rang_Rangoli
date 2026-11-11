@@ -29,5 +29,10 @@ Thumbs.db
 
 # Agent & Temp directories
 .gemini/
+.agent/
+
+# WhatsApp Web Session Storage & Cache
+.wwebjs_auth/
+.wwebjs_cache/
 
 .vercel

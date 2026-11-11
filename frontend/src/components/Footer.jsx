@@ -78,6 +78,11 @@ const Footer = () => {
                   {t('catTools')}
                 </Link>
               </li>
+              <li>
+                <Link to={`/shop?category=${encodeURIComponent('Holi Color')}`} className="hover:text-white transition-colors">
+                  {t('catHoliColor')}
+                </Link>
+              </li>
             </ul>
           </div>
 

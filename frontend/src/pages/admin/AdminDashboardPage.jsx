@@ -31,7 +31,11 @@ import {
   Store,
   ArrowUpRight,
   Palette,
-  Sparkles
+  Sparkles,
+  MessageSquare,
+  QrCode,
+  Phone,
+  ShieldAlert
 } from 'lucide-react';
 
 // Direct Price Editor for Rangoli & Sanskar Bharati packet sizes
@@ -182,6 +186,89 @@ const AdminDashboardPage = () => {
     setToastMessage(msg);
     setTimeout(() => setToastMessage(null), 3500);
   };
+
+  // State: WhatsApp Web Gateway (Kishor Jamdade)
+  const [waStatus, setWaStatus] = useState(null);
+  const [loadingWaStatus, setLoadingWaStatus] = useState(false);
+  const [waActionLoading, setWaActionLoading] = useState(false);
+  const [waFeedback, setWaFeedback] = useState(null);
+
+  const fetchWhatsAppStatus = useCallback(async () => {
+    try {
+      setLoadingWaStatus(true);
+      const res = await fetch('/api/admin/whatsapp/status', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWaStatus(data.data);
+      }
+    } catch (e) {
+      console.warn('Error fetching WhatsApp status:', e.message);
+    } finally {
+      setLoadingWaStatus(false);
+    }
+  }, [token]);
+
+  const handleRestartWhatsApp = async () => {
+    try {
+      setWaActionLoading(true);
+      setWaFeedback(null);
+      const res = await fetch('/api/admin/whatsapp/restart', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWaStatus(data.data);
+        setWaFeedback({ type: 'success', message: 'WhatsApp Web service restart initiated.' });
+        showToast('WhatsApp service restarted!');
+      } else {
+        throw new Error(data.message || 'Restart failed');
+      }
+    } catch (err) {
+      setWaFeedback({ type: 'error', message: err.message });
+    } finally {
+      setWaActionLoading(false);
+    }
+  };
+
+  const handleLogoutWhatsApp = async () => {
+    if (!window.confirm("Are you sure you want to disconnect Kishor Jamdade's WhatsApp session? You will need to scan the QR code again.")) return;
+    try {
+      setWaActionLoading(true);
+      setWaFeedback(null);
+      const res = await fetch('/api/admin/whatsapp/logout', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setWaStatus(data.data);
+        setWaFeedback({ type: 'success', message: 'Session disconnected! Fresh QR code generated below.' });
+        showToast('Session disconnected. Scan new QR.');
+      } else {
+        throw new Error(data.message || 'Disconnect failed');
+      }
+    } catch (err) {
+      setWaFeedback({ type: 'error', message: err.message });
+    } finally {
+      setWaActionLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWhatsAppStatus();
+  }, [fetchWhatsAppStatus]);
+
+  useEffect(() => {
+    if (waStatus?.status === 'QR_READY' || waStatus?.status === 'INITIALIZING') {
+      const interval = setInterval(() => {
+        fetchWhatsAppStatus();
+      }, 5000);
+      return () => clearInterval(interval);
+    }
+  }, [waStatus?.status, fetchWhatsAppStatus]);
 
   // Fetch KPI Stats
   const fetchStats = useCallback(async () => {
@@ -601,6 +688,23 @@ const AdminDashboardPage = () => {
                 {stats.summary.totalUsers}
               </span>
             )}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('whatsapp')}
+            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs sm:text-sm font-bold whitespace-nowrap transition-all cursor-pointer ${activeTab === 'whatsapp' ? 'bg-gradient-to-r from-orange-500 to-rose-600 text-white shadow-md shadow-orange-500/20' : 'text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-900'}`}
+          >
+            <MessageSquare className="h-4 w-4 text-emerald-400" />
+            <span>WhatsApp Gateway</span>
+            <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase ${
+              waStatus?.status === 'READY'
+                ? 'bg-emerald-500 text-white'
+                : waStatus?.status === 'QR_READY'
+                  ? 'bg-amber-500 text-white animate-pulse'
+                  : 'bg-rose-500 text-white'
+            }`}>
+              {waStatus?.status === 'READY' ? 'Online' : waStatus?.status === 'QR_READY' ? 'Scan QR' : 'Offline'}
+            </span>
           </button>
         </div>
 
@@ -1597,6 +1701,221 @@ const AdminDashboardPage = () => {
                   </table>
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* TAB 5: WHATSAPP WEB GATEWAY (KISHOR JAMDADE) */}
+        {activeTab === 'whatsapp' && (
+          <div className="space-y-6 animate-fade-in text-left">
+            {/* Header info */}
+            <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-500 text-white shadow-md">
+                    <MessageSquare className="h-6 w-6" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
+                      <span>WhatsApp Web Automation Gateway</span>
+                      <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
+                        waStatus?.status === 'READY'
+                          ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                          : waStatus?.status === 'QR_READY'
+                            ? 'bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300 animate-pulse'
+                            : 'bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300'
+                      }`}>
+                        {waStatus?.status === 'READY' ? '● Connected & Ready' : waStatus?.status === 'QR_READY' ? '● Awaiting QR Scan' : '● Disconnected'}
+                      </span>
+                    </h2>
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                      Automated itemized order receipts and 4-digit doorstep delivery OTP dispatch via store owner <strong>Kishor Jamdade (+91 70576 17451)</strong>. Zero monthly API fees.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={fetchWhatsAppStatus}
+                    disabled={loadingWaStatus}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3.5 w-3.5 ${loadingWaStatus ? 'animate-spin' : ''}`} />
+                    <span>Check Status</span>
+                  </button>
+
+                  <button
+                    onClick={handleRestartWhatsApp}
+                    disabled={waActionLoading}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 dark:bg-slate-100 dark:hover:bg-white text-white dark:text-slate-900 text-xs font-bold transition-all shadow-sm cursor-pointer disabled:opacity-50"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    <span>Restart Service</span>
+                  </button>
+
+                  <button
+                    onClick={handleLogoutWhatsApp}
+                    disabled={waActionLoading}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-rose-200 dark:border-rose-900/60 bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 text-rose-700 dark:text-rose-300 text-xs font-bold transition-all cursor-pointer disabled:opacity-50"
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                    <span>Disconnect Session</span>
+                  </button>
+                </div>
+              </div>
+
+              {waFeedback && (
+                <div className={`mt-4 p-3 rounded-2xl text-xs font-semibold flex items-center gap-2 ${
+                  waFeedback.type === 'success' 
+                    ? 'bg-emerald-50 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
+                    : 'bg-rose-50 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
+                }`}>
+                  {waFeedback.type === 'success' ? <CheckCircle2 className="h-4 w-4" /> : <ShieldAlert className="h-4 w-4" />}
+                  <span>{waFeedback.message}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Connection Status & QR Code Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              
+              {/* Main Panel: Active Status or QR Pairing */}
+              <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 shadow-xl lg:col-span-2">
+                {waStatus?.status === 'READY' ? (
+                  <div className="p-6 rounded-2xl bg-gradient-to-br from-emerald-50 via-teal-50/40 to-white dark:from-slate-900 dark:via-emerald-950/30 dark:to-slate-900 border border-emerald-200 dark:border-emerald-800 space-y-4">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center text-xl shadow-md">
+                        ✓
+                      </div>
+                      <div>
+                        <h3 className="text-base font-black text-slate-900 dark:text-white">
+                          WhatsApp Session Active & Connected
+                        </h3>
+                        <p className="text-xs text-slate-500 dark:text-slate-400">
+                          Headless browser session is running. All new orders will automatically trigger customer WhatsApp order summaries, 4-digit OTPs, and owner alerts.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Owner Number</span>
+                        <p className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                          {waStatus.clientInfo?.phone || waStatus.ownerPhone || '+91 70576 17451'}
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Account Identity</span>
+                        <p className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                          {waStatus.clientInfo?.pushname || waStatus.ownerName || 'Kishor Jamdade'}
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Messages Dispatched</span>
+                        <p className="text-sm font-black text-emerald-600 dark:text-emerald-400 mt-0.5 font-mono">
+                          {waStatus.stats?.totalSent || 0} automated messages
+                        </p>
+                      </div>
+
+                      <div className="p-3.5 rounded-xl bg-white dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Session Status</span>
+                        <p className="text-sm font-black text-slate-900 dark:text-white mt-0.5">
+                          LocalAuth (Persistent)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ) : waStatus?.status === 'QR_READY' && waStatus?.qrCode ? (
+                  <div className="flex flex-col sm:flex-row items-center gap-6 p-6 rounded-2xl bg-amber-50/50 dark:bg-amber-950/20 border border-amber-200 dark:border-amber-800">
+                    <div className="p-3 bg-white rounded-2xl shadow-lg border border-slate-200 shrink-0">
+                      <img
+                        src={waStatus.qrCode}
+                        alt="WhatsApp QR Code"
+                        className="w-56 h-56 rounded-lg object-contain"
+                      />
+                    </div>
+
+                    <div className="space-y-3">
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 dark:bg-amber-950 dark:text-amber-300 text-xs font-bold">
+                        <QrCode className="h-3.5 w-3.5" />
+                        <span>Scan with Kishor Jamdade's WhatsApp</span>
+                      </div>
+                      <h3 className="text-base font-black text-slate-900 dark:text-white">
+                        Scan QR Code to Connect WhatsApp
+                      </h3>
+                      <ol className="text-xs text-slate-600 dark:text-slate-300 space-y-2 list-decimal list-inside leading-relaxed font-medium">
+                        <li>Open WhatsApp on phone <strong>+91 70576 17451</strong></li>
+                        <li>Tap <strong>3-Dots / Settings</strong> &gt; <strong>Linked Devices</strong></li>
+                        <li>Tap <strong>Link a Device</strong> and point your camera at this QR code</li>
+                        <li>Once scanned, the page will auto-refresh and transition to <strong>Connected</strong> within 5 seconds!</li>
+                      </ol>
+                      <p className="text-[11px] text-slate-400">
+                        * QR code refreshes automatically. Credentials will be securely saved locally in <code className="font-mono">.wwebjs_auth</code>.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="py-12 px-6 text-center rounded-2xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div className="h-12 w-12 rounded-full bg-slate-200 dark:bg-slate-700 mx-auto flex items-center justify-center text-slate-500">
+                      <Clock className="h-6 w-6 animate-spin" />
+                    </div>
+                    <div>
+                      <h3 className="text-base font-bold text-slate-800 dark:text-slate-200">
+                        WhatsApp Web Client Initializing...
+                      </h3>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm mx-auto mt-1">
+                        Starting headless Chromium engine. The QR code will appear here within a few moments for phone pairing.
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchWhatsAppStatus}
+                      className="px-4 py-2 rounded-xl bg-orange-600 hover:bg-orange-700 text-white text-xs font-bold shadow-md cursor-pointer inline-flex items-center gap-1.5"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      <span>Refresh QR Code</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Sidebar Guide & Features */}
+              <div className="space-y-4">
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-lg space-y-3">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400">
+                    Automated Workflow Features
+                  </h4>
+                  <ul className="text-xs text-slate-600 dark:text-slate-300 space-y-2.5">
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
+                      <span><strong>Instant Itemized Invoices:</strong> Dispatched to customer WhatsApp immediately when an order is placed.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
+                      <span><strong>4-Digit Delivery OTP:</strong> Pre-generated upon order creation, valid for 24 hours with 5 max attempts.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
+                      <span><strong>Instant Owner Alerts:</strong> Kishor Jamdade receives live alert on <strong>+91 70576 17451</strong> for every new incoming order.</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <span className="text-emerald-500 font-bold">✓</span>
+                      <span><strong>Zero Recurring Costs:</strong> Operates 100% free with no monthly Meta Cloud or Twilio fees.</span>
+                    </li>
+                  </ul>
+                </div>
+
+                <div className="rounded-3xl border border-slate-200/80 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-lg">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-400 mb-2">
+                    Quick Testing & Fallback
+                  </h4>
+                  <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                    If WhatsApp Web is temporarily offline, customer orders still succeed smoothly and direct <code className="font-mono bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded text-[10px]">wa.me</code> links are logged in the order database.
+                  </p>
+                </div>
+              </div>
+
             </div>
           </div>
         )}

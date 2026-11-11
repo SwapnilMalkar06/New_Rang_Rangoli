@@ -151,7 +151,37 @@ export const translations = {
     guestCheckoutNotice: 'Shopping as a guest? Log in for quick saved checkout and order tracking.',
     signInToAddCart: 'Sign In to Add to Cart',
     loginRequiredPrompt: 'Please sign in or create an account to add items to your cart.',
-    loginToCheckout: 'Sign In to Checkout'
+    loginToCheckout: 'Sign In to Checkout',
+
+    // Delivery OTP & WhatsApp System
+    deliveryOtpTitle: '4-Digit Delivery Verification OTP',
+    deliveryOtpDesc: 'Compulsory 4-digit code sent to customer WhatsApp from Kishor Jamdade (+91 70576 17451)',
+    deliveryOtpInputPlaceholder: 'Enter 4-digit OTP',
+    deliveryOtpVerifyBtn: 'Verify & Confirm Delivery',
+    deliveryOtpResendBtn: 'Resend 4-Digit OTP',
+    deliveryOtpExpiresAt: 'Expires at:',
+    deliveryOtpExpired: 'Expired (24h passed)',
+    deliveryOtpActive: 'Active OTP',
+    deliveryOtpVerified: 'OTP Verified Successfully',
+    deliveryOtpAttemptsLabel: 'Attempts:',
+    deliveryOtpAttemptsLocked: 'Maximum attempts reached! Please click "Resend OTP".',
+    deliveryOtpInstruction: 'Delivery partner must collect and enter the 4-digit OTP from customer WhatsApp to mark parcel as delivered.',
+    
+    // WhatsApp Web Gateway
+    whatsappHubTitle: 'WhatsApp Web Automation Gateway',
+    whatsappOwnerLabel: 'Owner: Kishor Jamdade (+91 70576 17451)',
+    whatsappStatusConnected: 'Connected & Active',
+    whatsappStatusAwaitingQR: 'Scan QR to Connect',
+    whatsappStatusDisconnected: 'Disconnected',
+    whatsappStatusInitializing: 'Initializing...',
+    whatsappScanInstructions: "Open WhatsApp on Kishor Jamdade's phone (+91 70576 17451), go to Linked Devices > Link a Device, and scan this QR code.",
+    whatsappRestartBtn: 'Restart WhatsApp Service',
+    whatsappLogoutBtn: 'Disconnect & Fresh QR',
+    whatsappAutoSentCount: 'Total Automated Messages:',
+    
+    // Order Success & Customer Alerts
+    orderOtpSentNotice: 'Your itemized invoice and confidential 4-digit delivery verification OTP have been sent to your WhatsApp from Kishor Jamdade (+91 70576 17451).',
+    orderOtpKeepSafePrompt: 'Please keep this 4-digit OTP safe and share it with the delivery partner upon arrival to receive your package.'
   },
   mr: {
     // Navbar
@@ -305,6 +335,36 @@ export const translations = {
     guestCheckoutNotice: 'अतिथी म्हणून खरेदी करत आहात? जलद चेकआउट आणि ऑर्डर ट्रॅकिंगसाठी लॉगिन करा.',
     signInToAddCart: 'खरेदीसाठी लॉगिन करा',
     loginRequiredPrompt: 'कार्टमध्ये रंग जोडण्यासाठी आणि खरेदी करण्यासाठी कृपया लॉगिन करा.',
-    loginToCheckout: 'चेकआउटसाठी लॉगिन करा'
+    loginToCheckout: 'चेकआउटसाठी लॉगिन करा',
+
+    // Delivery OTP & WhatsApp System
+    deliveryOtpTitle: '४-अंकी डिलिव्हरी पडताळणी ओटीपी (OTP)',
+    deliveryOtpDesc: 'ऑर्डर दिल्यानंतर किशोर जामदाडे (+९१ ७०५७६ १७४५१) यांच्या व्हॉट्सॲपवरून पाठवलेला अनिवार्य ४-अंकी कोड',
+    deliveryOtpInputPlaceholder: '४-अंकी ओटीपी प्रविष्ट करा',
+    deliveryOtpVerifyBtn: 'पडताळणी करा आणि डिलिव्हरी पूर्ण करा',
+    deliveryOtpResendBtn: '४-अंकी ओटीपी पुन्हा पाठवा',
+    deliveryOtpExpiresAt: 'कालबाह्य होण्याची वेळ:',
+    deliveryOtpExpired: 'कालबाह्य झाले (२४ तास उलटले)',
+    deliveryOtpActive: 'सक्रिय ओटीपी',
+    deliveryOtpVerified: 'ओटीपी पडताळणी यशस्वीरित्या पूर्ण!',
+    deliveryOtpAttemptsLabel: 'प्रयत्न:',
+    deliveryOtpAttemptsLocked: 'कमाल प्रयत्न मर्यादा ओलांडली! कृपया पुन्हा नवीन ओटीपी पाठवा.',
+    deliveryOtpInstruction: 'पार्सल डिलिव्हरी पूर्ण करण्यासाठी डिलिव्हरी प्रतिनिधीने ग्राहकाच्या व्हॉट्सॲपवरील ४-अंकी ओटीपी घेणे अनिवार्य आहे.',
+    
+    // WhatsApp Web Gateway
+    whatsappHubTitle: 'व्हॉट्सॲप वेब ऑटोमेशन गेटवे',
+    whatsappOwnerLabel: 'मालक: किशोर जामदाडे (+९१ ७०५७६ १७४५१)',
+    whatsappStatusConnected: 'कनेक्टेड आणि सक्रिय',
+    whatsappStatusAwaitingQR: 'कनेक्ट करण्यासाठी क्यूआर स्कॅन करा',
+    whatsappStatusDisconnected: 'डिस्कनेक्ट झाले',
+    whatsappStatusInitializing: 'सुरू होत आहे...',
+    whatsappScanInstructions: 'किशोर जामदाडे यांच्या फोनवर (+९१ ७०५७६ १७४५१) व्हॉट्सॲप उघडा, "लिंक्ड डिव्हाइसेस" वर जा आणि हा क्यूआर कोड स्कॅन करा.',
+    whatsappRestartBtn: 'सेवा रीस्टार्ट करा',
+    whatsappLogoutBtn: 'सत्र डिस्कनेक्ट करा व नवीन क्यूआर घ्या',
+    whatsappAutoSentCount: 'एकूण पाठवलेले स्वयंचलित संदेश:',
+    
+    // Order Success & Customer Alerts
+    orderOtpSentNotice: 'तुमची सविस्तर पावती आणि गोपनीय ४-अंकी डिलिव्हरी पडताळणी ओटीपी किशोर जामदाडे (+९१ ७०५७६ १७४५१) यांच्या व्हॉट्सॲपवरून पाठवला आहे.',
+    orderOtpKeepSafePrompt: 'कृपया हा ४-अंकी ओटीपी सुरक्षित ठेवा आणि पार्सल स्वीकारताना डिलिव्हरी प्रतिनिधीला सांगा.'
   }
 };

@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 import { ShoppingBag, Sparkles, Store, ChevronDown, Calendar, ArrowRight } from 'lucide-react';
@@ -36,6 +36,7 @@ export const MONTHLY_FESTIVALS = [
     taglineMr: '१००% त्वचेसाठी सुरक्षित सेंद्रिय हर्बल रंग व सुगंधी शाही गुलाबी गुलाल.',
     image: '/festivals/holi.png',
     tag: 'Holi',
+    category: 'Holi Color',
     theme: 'default',
     accentGradient: 'from-pink-500 via-teal-500 to-emerald-500',
     glowColor: 'rgba(236, 72, 153, 0.45)'
@@ -53,6 +54,7 @@ export const MONTHLY_FESTIVALS = [
     taglineMr: 'सेंद्रिय हर्बल गुलाल, रंगपंचमी संच आणि सुरक्षित सण रंग.',
     image: '/festivals/holi.png',
     tag: 'Holi',
+    category: 'Holi Color',
     theme: 'default',
     accentGradient: 'from-pink-500 via-teal-500 to-emerald-500',
     glowColor: 'rgba(20, 184, 166, 0.45)'
@@ -213,6 +215,7 @@ export const MONTHLY_FESTIVALS = [
 ];
 
 const CurrentFestivalHero = () => {
+  const navigate = useNavigate();
   const { language } = useLanguage();
   const isMarathi = language === 'mr';
 
@@ -227,7 +230,11 @@ const CurrentFestivalHero = () => {
   const festiveMonth = isMarathi ? currentFestival.festiveMonthMr : currentFestival.festiveMonthEn;
   const tagline = isMarathi ? currentFestival.taglineMr : currentFestival.taglineEn;
 
-  const shopUrl = `/shop?tag=${encodeURIComponent(currentFestival.tag)}&theme=${encodeURIComponent(currentFestival.theme)}`;
+  const isHoli = currentFestival.festivalId === 'holi' || currentFestival.tag === 'Holi' || currentFestival.category === 'Holi Color';
+  const festivalCategory = currentFestival.category || (isHoli ? 'Holi Color' : 'Rangoli');
+  const shopUrl = isHoli
+    ? `/shop?category=${encodeURIComponent('Holi Color')}`
+    : `/shop?category=${encodeURIComponent(festivalCategory)}&tag=${encodeURIComponent(currentFestival.tag)}&theme=${encodeURIComponent(currentFestival.theme)}`;
 
   const scrollToFestivals = (e) => {
     e.preventDefault();
@@ -340,7 +347,8 @@ const CurrentFestivalHero = () => {
                   type="button"
                   onClick={(e) => {
                     e.preventDefault();
-                    window.location.href = shopUrl;
+                    e.stopPropagation();
+                    navigate(shopUrl);
                   }}
                   className={`flex-1 md:flex-initial flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r ${currentFestival.accentGradient} hover:opacity-95 px-5 py-3 text-xs sm:text-sm font-bold text-white shadow-lg hover:scale-102 transition-all duration-200`}
                 >
