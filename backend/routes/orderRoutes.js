@@ -8,9 +8,11 @@ const {
   updateOrderStatus,
   sendDeliveryOtp,
   verifyDeliveryOtp,
-  deliveryBoyVerifyOtp
+  deliveryBoyVerifyOtp,
+  getDeliveryRuns,
+  startDeliveryRun
 } = require('../controllers/orderController');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, adminOnly, deliveryOrAdminOnly } = require('../middleware/auth');
 
 router.route('/')
   .get(protect, adminOnly, getAllOrders)
@@ -18,6 +20,14 @@ router.route('/')
 
 router.route('/my-orders')
   .get(protect, getMyOrders);
+
+// Delivery partner dashboard runs list
+router.route('/delivery/runs')
+  .get(protect, deliveryOrAdminOnly, getDeliveryRuns);
+
+// Delivery partner updates status to Out for Delivery & triggers OTP
+router.route('/:id/start-delivery')
+  .put(protect, deliveryOrAdminOnly, startDeliveryRun);
 
 // Doorstep delivery verification by delivery partner (Public, verified by 4-digit OTP)
 router.post('/:id/delivery-verify', deliveryBoyVerifyOtp);

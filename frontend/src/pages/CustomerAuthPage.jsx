@@ -3,7 +3,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { useLanguage } from '../context/LanguageContext';
 import { loginUser, registerUser, selectAuthLoading, selectAuthError, selectUser, clearError } from '../store/authSlice';
-import { User, Mail, Lock, Phone, Eye, EyeOff, Sparkles, ShoppingBag, ArrowRight, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { User, Mail, Lock, Phone, Eye, EyeOff, Sparkles, ShoppingBag, ArrowRight, CheckCircle2, AlertCircle, ShieldCheck, Truck } from 'lucide-react';
 
 const CustomerAuthPage = ({ defaultTab = 'login' }) => {
   const { t, language } = useLanguage();
@@ -42,6 +42,8 @@ const CustomerAuthPage = ({ defaultTab = 'login' }) => {
     if (currentUser) {
       if (currentUser.role === 'admin' && redirectUrl === '/shop') {
         navigate('/admin');
+      } else if (currentUser.role === 'delivery') {
+        navigate('/delivery-dashboard');
       } else {
         navigate(redirectUrl);
       }
@@ -104,6 +106,12 @@ const CustomerAuthPage = ({ defaultTab = 'login' }) => {
     setLoginEmail('admin@newrangrangoli.com');
     setLoginPassword('admin123');
     dispatch(loginUser({ email: 'admin@newrangrangoli.com', password: 'admin123' }));
+  };
+
+  const handleQuickDeliveryLogin = () => {
+    setLoginEmail('delivery@rangoli.com');
+    setLoginPassword('delivery123');
+    dispatch(loginUser({ email: 'delivery@rangoli.com', password: 'delivery123' }));
   };
 
   return (
@@ -237,7 +245,7 @@ const CustomerAuthPage = ({ defaultTab = 'login' }) => {
               </button>
 
               {/* Quick Demo Login Helper */}
-              <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="pt-2 grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   type="button"
                   onClick={handleQuickDemoLogin}
@@ -245,7 +253,7 @@ const CustomerAuthPage = ({ defaultTab = 'login' }) => {
                   className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-orange-300 dark:border-orange-900/60 bg-orange-50/60 dark:bg-orange-950/20 py-2 text-xs font-semibold text-orange-700 dark:text-orange-300 hover:bg-orange-100/70 transition-colors cursor-pointer"
                 >
                   <Sparkles className="h-3.5 w-3.5 text-orange-500" />
-                  <span>Demo Customer</span>
+                  <span>Customer</span>
                 </button>
                 <button
                   type="button"
@@ -254,7 +262,16 @@ const CustomerAuthPage = ({ defaultTab = 'login' }) => {
                   className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-amber-300 dark:border-amber-900/60 bg-amber-50/60 dark:bg-amber-950/20 py-2 text-xs font-semibold text-amber-800 dark:text-amber-300 hover:bg-amber-100/70 transition-colors cursor-pointer"
                 >
                   <ShieldCheck className="h-3.5 w-3.5 text-amber-600" />
-                  <span>Demo Admin</span>
+                  <span>Admin</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleQuickDeliveryLogin}
+                  disabled={loading}
+                  className="w-full flex items-center justify-center gap-1.5 rounded-xl border border-dashed border-indigo-300 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/20 py-2 text-xs font-semibold text-indigo-800 dark:text-indigo-300 hover:bg-indigo-100/70 transition-colors cursor-pointer"
+                >
+                  <Truck className="h-3.5 w-3.5 text-indigo-600" />
+                  <span>Delivery Boy</span>
                 </button>
               </div>
             </form>

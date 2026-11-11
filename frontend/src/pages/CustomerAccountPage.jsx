@@ -75,7 +75,7 @@ const CustomerAccountPage = () => {
                     {user.name}
                   </h1>
                   <span className="rounded-full bg-orange-100 dark:bg-orange-950/70 text-orange-700 dark:text-orange-300 border border-orange-300 dark:border-orange-800 px-2.5 py-0.5 text-[11px] font-extrabold uppercase">
-                    {user.role === 'retailer' ? 'Wholesale Partner' : 'Shopping Customer'}
+                    {user.role === 'delivery' ? 'Delivery Partner' : user.role === 'retailer' ? 'Wholesale Partner' : 'Shopping Customer'}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
@@ -97,6 +97,15 @@ const CustomerAccountPage = () => {
                 >
                   <ShieldCheck className="h-4 w-4" />
                   <span>Admin Panel</span>
+                </Link>
+              )}
+              {(user.role === 'delivery' || user.role === 'admin') && (
+                <Link
+                  to="/delivery-dashboard"
+                  className="flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 px-4 py-2 text-xs font-bold text-white shadow-md transition-all"
+                >
+                  <Truck className="h-4 w-4" />
+                  <span>Delivery Runs</span>
                 </Link>
               )}
               <Link

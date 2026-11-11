@@ -13,6 +13,7 @@ import CustomerAuthPage from './pages/CustomerAuthPage';
 import CustomerAccountPage from './pages/CustomerAccountPage';
 import AdminDashboardPage from './pages/admin/AdminDashboardPage';
 import DeliveryVerifyPage from './pages/DeliveryVerifyPage';
+import DeliveryDashboardPage from './pages/DeliveryDashboardPage';
 import AdminRoute from './components/AdminRoute';
 import RangoliColorCatalog from './components/RangoliColorCatalog';
 
@@ -56,6 +57,9 @@ const TitleUpdater = () => {
       case '/delivery-verify':
         document.title = 'Doorstep Delivery Verification | New Rang Rangoli';
         break;
+      case '/delivery-dashboard':
+        document.title = 'Delivery Partner Dashboard | New Rang Rangoli';
+        break;
       case '/cart':
         document.title = 'Your Shopping Cart | New Rang Rangoli';
         break;
@@ -97,6 +101,7 @@ const App = () => {
             <Route path="/delivery-verify/:id" element={<DeliveryVerifyPage />} />
             <Route path="/delivery-verify" element={<DeliveryVerifyPage />} />
             <Route path="/delivery" element={<DeliveryVerifyPage />} />
+            <Route path="/delivery-dashboard" element={<DeliveryDashboardPage />} />
             <Route
               path="/admin"
               element={

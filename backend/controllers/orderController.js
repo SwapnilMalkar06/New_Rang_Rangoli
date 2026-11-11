@@ -172,8 +172,19 @@ exports.createOrder = async (req, res) => {
  */
 exports.getMyOrders = async (req, res) => {
   try {
-    const orders = await Order.find({ customerEmail: req.user.email })
-      .sort({ createdAt: -1 });
+    const userEmail = (req.user.email || '').trim();
+    const userPhone = (req.user.phone || '').trim();
+
+    const queryConditions = [];
+    if (userEmail) {
+      queryConditions.push({ customerEmail: new RegExp(`^${userEmail}$`, 'i') });
+    }
+    if (userPhone) {
+      queryConditions.push({ customerPhone: userPhone });
+    }
+
+    const query = queryConditions.length > 0 ? { $or: queryConditions } : { customerEmail: userEmail };
+    const orders = await Order.find(query).sort({ createdAt: -1 });
 
     res.status(200).json({
       success: true,
@@ -746,6 +757,118 @@ exports.deliveryBoyVerifyOtp = async (req, res) => {
     res.status(500).json({
       success: false,
       message: 'Server error during doorstep delivery verification',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Get orders for delivery partner dashboard
+ * @route   GET /api/orders/delivery/runs
+ * @access  Private/Delivery or Admin
+ */
+exports.getDeliveryRuns = async (req, res) => {
+  try {
+    const { status, search } = req.query;
+    const query = {};
+
+    if (status && status !== 'All') {
+      query.fulfillmentStatus = status;
+    } else {
+      query.fulfillmentStatus = { $in: ['Shipped', 'Out for Delivery', 'Delivered'] };
+    }
+
+    if (search && search.trim()) {
+      const searchRegex = new RegExp(search.trim(), 'i');
+      query.$or = [
+        { customerName: searchRegex },
+        { customerPhone: searchRegex },
+        { shippingAddress: searchRegex }
+      ];
+      if (mongoose.Types.ObjectId.isValid(search.trim())) {
+        query.$or.push({ _id: search.trim() });
+      }
+    }
+
+    const orders = await Order.find(query).sort({ updatedAt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: orders.length,
+      data: orders
+    });
+  } catch (error) {
+    console.error('Error fetching delivery runs:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error retrieving delivery runs',
+      error: error.message
+    });
+  }
+};
+
+/**
+ * @desc    Delivery partner updates status to "Out for Delivery" & dispatches 4-digit OTP
+ * @route   PUT /api/orders/:id/start-delivery
+ * @access  Private/Delivery or Admin
+ */
+exports.startDeliveryRun = async (req, res) => {
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      return res.status(404).json({
+        success: false,
+        message: 'Order not found'
+      });
+    }
+
+    if (order.fulfillmentStatus === 'Delivered') {
+      return res.status(400).json({
+        success: false,
+        message: 'Order is already delivered and verified.'
+      });
+    }
+
+    // Auto-generate fresh 4-digit delivery OTP
+    const generatedOtp = Math.floor(1000 + Math.random() * 9000).toString();
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours expiry
+
+    order.fulfillmentStatus = 'Out for Delivery';
+    order.deliveryOtp = {
+      code: generatedOtp,
+      generatedAt: new Date(),
+      expiresAt: expiresAt,
+      isVerified: false,
+      attempts: 0,
+      maxAttempts: 5
+    };
+
+    // Send 4-digit OTP WhatsApp message automatically to customer
+    try {
+      const waResult = await whatsappWebService.sendDeliveryOtp(order, generatedOtp);
+      order.whatsappLogs.push({
+        type: 'DELIVERY_RUN_STARTED',
+        phone: order.customerPhone,
+        message: `Delivery partner started delivery run. 4-Digit OTP (${generatedOtp}) sent to customer WhatsApp.`,
+        sentAt: new Date(),
+        isSimulated: !!waResult?.simulated
+      });
+    } catch (waErr) {
+      console.error('Failed to send Delivery OTP on start run:', waErr.message);
+    }
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: `Delivery run started! 4-Digit OTP (${generatedOtp}) automatically sent to customer WhatsApp (+${order.customerPhone}).`,
+      data: order
+    });
+  } catch (error) {
+    console.error('Error starting delivery run:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server error starting delivery run',
       error: error.message
     });
   }

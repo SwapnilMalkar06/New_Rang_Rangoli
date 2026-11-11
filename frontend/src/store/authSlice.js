@@ -109,5 +109,6 @@ export const selectAuthLoading = (state) => state.auth.loading;
 export const selectAuthError = (state) => state.auth.error;
 export const selectIsWholesaler = (state) => state.auth.user && state.auth.user.role === 'retailer';
 export const selectIsAdmin = (state) => state.auth.user && state.auth.user.role === 'admin';
+export const selectIsDelivery = (state) => state.auth.user && (state.auth.user.role === 'delivery' || state.auth.user.role === 'admin');
 
 export default authSlice.reducer;

@@ -352,6 +352,44 @@ const seedAdmin = async () => {
   }
 };
 
+const seedDeliveryPartner = async () => {
+  try {
+    const deliveryExists = await User.findOne({ email: 'delivery@rangoli.com' });
+    if (!deliveryExists) {
+      console.log('Seeding default delivery partner account...');
+      const delivery = new User({
+        name: 'Ramesh Patil (Delivery Partner)',
+        email: 'delivery@rangoli.com',
+        password: 'delivery123',
+        phone: '9876543210',
+        role: 'delivery'
+      });
+      await delivery.save();
+      console.log('Delivery partner account created successfully: delivery@rangoli.com / delivery123');
+    }
+  } catch (error) {
+    console.error(`Error seeding delivery partner: ${error.message}`);
+  }
+};
+
+const seedCustomer = async () => {
+  try {
+    const customerExists = await User.findOne({ email: 'radha@example.com' });
+    if (!customerExists) {
+      const customer = new User({
+        name: 'Radha Sharma',
+        email: 'radha@example.com',
+        password: 'password123',
+        phone: '9876543211',
+        role: 'customer'
+      });
+      await customer.save();
+    }
+  } catch (error) {
+    console.error(`Error seeding customer: ${error.message}`);
+  }
+};
+
 // Connect DB & Start Server
 const PORT = process.env.PORT || 5000;
 
@@ -359,6 +397,8 @@ if (require.main === module) {
   connectDB().then(() => {
     seedProducts();
     seedAdmin();
+    seedDeliveryPartner();
+    seedCustomer();
     app.listen(PORT, () => {
       console.log(`Server running on port ${PORT}`);
       // Boot WhatsApp Web client in background
@@ -372,3 +412,5 @@ if (require.main === module) {
 module.exports = app;
 module.exports.seedProducts = seedProducts;
 module.exports.seedAdmin = seedAdmin;
+module.exports.seedDeliveryPartner = seedDeliveryPartner;
+module.exports.seedCustomer = seedCustomer;

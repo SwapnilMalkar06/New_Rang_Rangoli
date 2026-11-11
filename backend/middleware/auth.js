@@ -50,3 +50,17 @@ exports.adminOnly = (req, res, next) => {
     });
   }
 };
+
+/**
+ * Middleware to restrict access to Delivery Partners or Admins
+ */
+exports.deliveryOrAdminOnly = (req, res, next) => {
+  if (req.user && (req.user.role === 'delivery' || req.user.role === 'admin')) {
+    next();
+  } else {
+    res.status(403).json({
+      success: false,
+      message: 'Access denied: Requires delivery partner or administrator credentials'
+    });
+  }
+};
